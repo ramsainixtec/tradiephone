@@ -127,7 +127,7 @@ export function OnboardingShell({
                   <PhoneCall className="size-3.5" />
                 </span>
                 <span className="text-sm">
-                  hello22<span className="text-primary">.ai</span>
+                  tradiephone<span className="text-primary">.ai</span>
                 </span>
               </BrandLogo>
             </Link>
@@ -211,7 +211,7 @@ export function OnboardingShell({
               <PhoneCall className="size-4" />
             </span>
             <span>
-              hello22<span className="text-primary">.ai</span>
+              tradiephone<span className="text-primary">.ai</span>
             </span>
           </BrandLogo>
         </Link>

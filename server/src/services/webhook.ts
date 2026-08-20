@@ -33,7 +33,7 @@ function crmRecordingUrl(call: CallLog): string | null {
 }
 
 /**
- * Identity of the Hello22 member (tenant) a call belongs to. Attached to every
+ * Identity of the Tradie Phone member (tenant) a call belongs to. Attached to every
  * lead pushed to Perfex so leads from different members are distinguishable in
  * the shared CRM — the businessName lands in Perfex's "Company" column and the
  * full identity is echoed in the lead description as a stable fallback.
@@ -204,7 +204,7 @@ function buildNexleonLeadFields(
     : "";
 
   const testBlock = test
-    ? `*** ${TEST_LEAD_PREFIX} This lead came from an in-app test call in hello22.ai, ` +
+    ? `*** ${TEST_LEAD_PREFIX} This lead came from an in-app test call in tradiephone.ai, ` +
       `not a real customer. Safe to delete. ***\n\n`
     : "";
 
@@ -375,9 +375,9 @@ export async function testWebhookDelivery(crm: CrmIntegration): Promise<Delivery
     url = crm.nexleonUrl.trim().replace(/\/$/, "") + "/forms/wtl/" + crm.nexleonFormKey;
     const fields: Record<string, string> = {
       key: crm.nexleonFormKey,
-      name: "Test Caller (hello22.ai)",
+      name: "Test Caller (tradiephone.ai)",
       phonenumber: "+1234567890",
-      description: "This is a test lead from hello22.ai to verify your Nexleon CRM integration is working correctly.",
+      description: "This is a test lead from tradiephone.ai to verify your Nexleon CRM integration is working correctly.",
     };
     payload = fields;
     result = await postForm(url, fields);
@@ -409,7 +409,7 @@ export async function testAdminNexleon(): Promise<DeliveryResult> {
   const url = `${nexleonUrl}/forms/wtl/${formKey}`;
   const fields: Record<string, string> = {
     key: formKey,
-    name: "Test Caller (hello22.ai Admin)",
+    name: "Test Caller (tradiephone.ai Admin)",
     phonenumber: "+1234567890",
     description: "Admin test — verifying the global Nexleon CRM integration is working.",
   };
@@ -482,7 +482,7 @@ function buildTestPayload() {
       callerNumber: "+1234567890",
       durationSec: 45,
       outcome: "completed",
-      summary: "This is a test webhook delivery from hello22.ai to verify your CRM integration is working correctly.",
+      summary: "This is a test webhook delivery from tradiephone.ai to verify your CRM integration is working correctly.",
       recordingUrl: null,
       transcript: [],
       analysis: {},

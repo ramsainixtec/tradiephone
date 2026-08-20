@@ -85,7 +85,7 @@ interface OnboardingState {
  * but we mirror it to sessionStorage so it survives going back to the account
  * step or a page reload, then clears itself when the tab closes.
  */
-const PW_KEY = "hello22_onboarding_pw";
+const PW_KEY = "tradiephone_onboarding_pw";
 const readPw = () => {
   try {
     return sessionStorage.getItem(PW_KEY) ?? "";
@@ -370,7 +370,7 @@ export const useOnboardingStore = create<OnboardingState>()(
       },
     }),
     {
-      name: "hello22_onboarding",
+      name: "tradiephone_onboarding",
       // Persist everything except the password (kept in memory only, never on disk).
       partialize: (s) => ({
         step: s.step,

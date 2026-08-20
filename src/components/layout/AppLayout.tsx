@@ -216,7 +216,7 @@ export function AppLayout() {
           >
             <BrandLogo imgClassName="h-7 w-auto max-w-[140px] object-contain">
               <span className="text-sm font-semibold">
-                hello22<span className="text-primary">.ai</span>
+                tradiephone<span className="text-primary">.ai</span>
               </span>
             </BrandLogo>
           </Link>

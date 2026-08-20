@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/c/:id", "destination": "https://api.hello22.ai/c/:id" },
+    { "source": "/c/:id", "destination": "https://api.tradiephone.ai/c/:id" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
@@ -18,14 +18,14 @@
     },
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "app.hello22.ai" }],
+      "has": [{ "type": "host", "value": "app.tradiephone.ai" }],
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, follow" }
       ]
     },
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "staging.hello22.ai" }],
+      "has": [{ "type": "host", "value": "staging.tradiephone.ai" }],
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]

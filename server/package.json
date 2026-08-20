@@ -1,9 +1,9 @@
 {
-  "name": "hello22-server",
+  "name": "tradiephone-server",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Express + Prisma API for hello22.ai",
+  "description": "Express + Prisma API for tradiephone.ai",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
@@ -41,7 +41,7 @@
     "dayjs": "^1.11.21",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "hello22": "file:..",
+    "tradiephone": "file:..",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.13.7",
     "morgan": "^1.10.0",

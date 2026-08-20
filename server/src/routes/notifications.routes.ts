@@ -19,7 +19,7 @@ const router = express.Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TEST_SUMMARY =
-  "This is a test call summary from hello22. If you received this, your notifications are set up correctly.";
+  "This is a test call summary from Tradie Phone. If you received this, your notifications are set up correctly.";
 // Sample caller number so the test summary shows the same "from <number>" line a real call would.
 const TEST_CALLER_NUMBER = "+1 555 0100";
 

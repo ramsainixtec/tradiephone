@@ -345,7 +345,7 @@ export async function sendTestSms(to: string): Promise<{ from: string; to: strin
   const clean = normalize(to);
   if (!/^\+?\d{6,15}$/.test(clean)) throw badRequest("Enter a valid recipient phone number");
   try {
-    await sendSms(clean, "✅ hello22.ai test SMS — your sender number is configured correctly.");
+    await sendSms(clean, "✅ tradiephone.ai test SMS — your sender number is configured correctly.");
   } catch (e) {
     throw new HttpError(502, describeSmsError(e));
   }

@@ -155,8 +155,8 @@ export default function ResellerPortalPage() {
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({
-          title: "hello22.ai — AI receptionist",
-          text: "Never miss a call again. Try hello22.ai:",
+          title: "tradiephone.ai — AI receptionist",
+          text: "Never miss a call again. Try tradiephone.ai:",
           url: referralLink,
         });
       } catch {
@@ -177,7 +177,7 @@ export default function ResellerPortalPage() {
               <PhoneCall className="size-5" />
             </div>
             <span className="text-[15px] font-semibold">
-              hello22<span className="text-primary">.ai</span>
+              tradiephone<span className="text-primary">.ai</span>
             </span>
           </BrandLogo>
           <span className="text-[15px] font-semibold text-muted-foreground">· Partner</span>

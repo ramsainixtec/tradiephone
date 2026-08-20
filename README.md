@@ -1,7 +1,7 @@
-# hello22.ai — Voice Receptionist .. 
+# tradiephone.ai — Voice Receptionist .. 
 
 A **Vite + React 19 + TypeScript + Tailwind v4** single-page app for the
-hello22.ai "24/7 AI voice receptionist" dashboard, backed by the Express + Prisma +
+tradiephone.ai "24/7 AI voice receptionist" dashboard, backed by the Express + Prisma +
 Postgres API in [`server/`](server/). Zustand stores hydrate from the backend (and cache
 to `localStorage` between loads).
 //test

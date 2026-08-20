@@ -212,7 +212,7 @@ export function Sidebar() {
                   <PhoneCall className="size-5" />
                 </div>
                 <span className="truncate text-[15px] font-semibold leading-tight">
-                  hello22<span className="text-primary">.ai</span>
+                  tradiephone<span className="text-primary">.ai</span>
                 </span>
               </BrandLogo>
             </NavLink>

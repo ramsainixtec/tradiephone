@@ -30,7 +30,7 @@ vi.mock("../env.js", () => ({
 }));
 vi.mock("../prisma.js", () => ({ prisma: { callLog: { findUnique: h.findUnique } } }));
 vi.mock("../services/emailTemplates.js", () => ({
-  emailGlobals: () => ({ app_name: "Hello22", support_email: "support@hello22.ai" }),
+  emailGlobals: () => ({ app_name: "Tradie Phone", support_email: "support@tradiephone.ai" }),
 }));
 
 const { default: router } = await import("./publicCall.routes.js");

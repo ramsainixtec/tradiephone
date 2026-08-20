@@ -64,6 +64,6 @@ export const useChatStore = create<ChatState>()(
       },
       reset: () => set({ messages: DEFAULT_CHAT_MESSAGES, humanTakeover: false, open: false }),
     }),
-    { name: "hello22_chat" },
+    { name: "tradiephone_chat" },
   ),
 );

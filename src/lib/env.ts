@@ -4,8 +4,8 @@
  */
 export const env = {
   apiUrl: (import.meta.env.VITE_API_URL ?? "http://localhost:4000").trim(),
-  appName: import.meta.env.VITE_APP_NAME ?? "hello22.ai",
-  supportEmail: import.meta.env.VITE_SUPPORT_EMAIL ?? "connect@hello22.ai",
+  appName: import.meta.env.VITE_APP_NAME ?? "tradiephone.ai",
+  supportEmail: import.meta.env.VITE_SUPPORT_EMAIL ?? "connect@tradiephone.ai",
   supportPhone: import.meta.env.VITE_SUPPORT_PHONE ?? "+61 1300 000 000",
   supportWhatsapp: import.meta.env.VITE_SUPPORT_WHATSAPP ?? "https://wa.me/611300000000",
   vapiPublicKey: import.meta.env.VITE_VAPI_PUBLIC_KEY ?? "",

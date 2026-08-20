@@ -358,8 +358,8 @@ const BRANDING_KEYS = {
 /** App name + support email that every template can interpolate. */
 export function emailGlobals(): { app_name: string; support_email: string } {
   return {
-    app_name: getEffective("branding.appName").trim() || "hello22.ai",
-    support_email: getEffective("smtp.from").match(/[\w.+-]+@[\w.-]+/)?.[0] || "support@hello22.ai",
+    app_name: getEffective("branding.appName").trim() || "tradiephone.ai",
+    support_email: getEffective("smtp.from").match(/[\w.+-]+@[\w.-]+/)?.[0] || "support@tradiephone.ai",
   };
 }
 

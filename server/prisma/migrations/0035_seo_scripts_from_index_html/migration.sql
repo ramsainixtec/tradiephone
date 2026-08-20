@@ -40,7 +40,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <!-- Meta Pixel Code — production hosts only (skips staging, localhost, previews) -->
 <script>
   (function () {
-    var PROD_HOSTS = ['hello22.ai', 'www.hello22.ai', 'app.hello22.ai'];
+    var PROD_HOSTS = ['tradiephone.ai', 'www.tradiephone.ai', 'app.tradiephone.ai'];
     if (PROD_HOSTS.indexOf(window.location.hostname) === -1) return;
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?

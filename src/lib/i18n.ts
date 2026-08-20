@@ -209,7 +209,7 @@ export const useI18nStore = create<I18nState>()(
       },
     }),
     {
-      name: "hello22_i18n",
+      name: "tradiephone_i18n",
       onRehydrateStorage: () => (state) => {
         if (state) {
           document.documentElement.lang = state.locale;

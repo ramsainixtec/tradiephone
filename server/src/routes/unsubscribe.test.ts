@@ -36,7 +36,7 @@ vi.mock("../prisma.js", () => ({
 
 vi.mock("../services/settings.js", () => ({
   getEffective: (key: string) =>
-    key === "branding.appName" ? "Hello22" : key === "smtp.from" ? "x <support@hello22.ai>" : "",
+    key === "branding.appName" ? "Tradie Phone" : key === "smtp.from" ? "x <support@tradiephone.ai>" : "",
   integrationsStatus: () => ({ email: true }),
 }));
 

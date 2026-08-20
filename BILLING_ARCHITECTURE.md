@@ -1,6 +1,6 @@
 # Subscription & Billing Architecture
 
-Reference for hello22.ai's multi-tenant subscription billing — the **plans / features /
+Reference for tradiephone.ai's multi-tenant subscription billing — the **plans / features /
 upgrade-downgrade / legacy-plan / renewal** model as shipped. Pairs with the lifecycle notes in
 [`CLAUDE.md`](CLAUDE.md) (which is the living source of truth — update it on any change).
 

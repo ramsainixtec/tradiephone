@@ -54,14 +54,14 @@ const SAMPLE: Record<string, string> = {
   cta: "Top up or upgrade your plan to keep your AI receptionist answering.",
   caller_name: "John Carter",
   summary_block: "AI summary\nCaller asked about weekend availability and left a callback number.",
-  recording_block: "Recording: https://app.hello22.ai/recording/sample",
+  recording_block: "Recording: https://app.tradiephone.ai/recording/sample",
   transcript_block: "Transcript\nAI: Thanks for calling. How can I help?\nCaller: I'd like to book a job.",
   password: "Temp1234!",
   permissions: "Customers (View, Edit), Calls (View)",
   old_role: "Support",
   new_role: "Manager",
   role_name: "Manager",
-  login_url: "https://app.hello22.ai/login",
+  login_url: "https://app.tradiephone.ai/login",
   reason: "Reason: repeated policy violations",
 };
 
@@ -314,7 +314,7 @@ function BrandingCard({
   const footerPreview = footer.replace(
     /\{\{\s*unsubscribe\s*\}\}/g,
     `<p style="margin:16px 0 0;font-size:12px;line-height:1.5;color:#aaa">You're receiving this because you have a ${
-      fromName || "hello22.ai"
+      fromName || "tradiephone.ai"
     } account. <a href="#" style="color:#888;text-decoration:underline">Unsubscribe from these emails</a>.</p>`,
   );
 

@@ -49,7 +49,7 @@ export const DEFAULT_CHAT_MESSAGES: ChatMessage[] = [
     conversationId: "chat_demo",
     role: "assistant",
     content:
-      "Hi! 👋 I'm the hello22.ai support assistant. How can I help you set up your AI receptionist?",
+      "Hi! 👋 I'm the tradiephone.ai support assistant. How can I help you set up your AI receptionist?",
     createdAt: "2026-06-18T00:00:00.000Z",
   },
 ];

@@ -88,7 +88,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
       { key: "smtp.port", label: "SMTP Port", secret: false, envVar: "SMTP_PORT", placeholder: "587" },
       { key: "smtp.user", label: "Username", secret: false, envVar: "SMTP_USER", placeholder: "apikey" },
       { key: "smtp.pass", label: "Password", secret: true, envVar: "SMTP_PASS" },
-      { key: "smtp.from", label: "From Address", secret: false, envVar: "SMTP_FROM", placeholder: "hello22.ai <support@hello22.ai>" },
+      { key: "smtp.from", label: "From Address", secret: false, envVar: "SMTP_FROM", placeholder: "tradiephone.ai <support@tradiephone.ai>" },
       { key: "smtp.supportInbox", label: "Support Handoff Inbox", secret: false, envVar: "SUPPORT_INBOX_EMAIL", placeholder: "where chat handoffs are emailed — blank = From Address" },
     ],
   },
