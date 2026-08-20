@@ -1,0 +1,1047 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  STAFF
+  RESELLER
+}
+
+enum Plan {
+  free
+  premium
+}
+
+enum CallType {
+  Web
+  Phone
+}
+
+enum CallOutcome {
+  completed
+  missed
+  failed
+  voicemail
+}
+
+enum VerificationPurpose {
+  signup
+  password_reset
+  /// One-time code that lets an admin who forgot the "Login as Customer" PIN
+  /// set a new one. Its OWN purpose, deliberately: sharing `password_reset`
+  /// would let a code issued for one act perform the other.
+  impersonation_pin_reset
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         Role     @default(USER)
+  // Effective permission keys for STAFF. Denormalized from the assigned
+  // StaffRole (source of truth) so every auth read-path stays a single column
+  // read; re-synced whenever the role's permissions change.
+  permissions  String[] @default([])
+  // The named role this staff member is assigned (drives `permissions` above).
+  staffRoleId  String?
+  staffRole    StaffRole? @relation(fields: [staffRoleId], references: [id], onDelete: SetNull)
+
+  // 2FA (otplib / TOTP) — optional
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+
+  // Reseller/affiliate. A RESELLER has a referralCode + commissionPercent; a
+  // customer referred by one carries referredById.
+  referralCode      String? @unique
+  commissionPercent Float   @default(0)
+  referredById      String?
+  referredBy        User?   @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals         User[]  @relation("Referrals")
+
+  // Marketing/notification email opt-out. Set when the recipient clicks the
+  // unsubscribe link in an email footer (or via a mail client's one-click
+  // List-Unsubscribe); null = subscribed. Only silences non-essential
+  // notification emails (call summaries, usage & grace/trial reminders) —
+  // security and account emails (verification, password reset, suspension,
+  // staff) always send regardless of this flag.
+  emailOptOutAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile      Profile?
+  conversion   Conversion?
+  crm          CrmIntegration?
+  conversations ChatConversation[]
+  phoneNumbers  PhoneNumber[]
+
+  commissionsEarned Commission[] @relation("ResellerCommissions")
+  commissionsFrom   Commission[] @relation("CustomerCommissions")
+
+  notifications Notification[]
+  planEvents    PlanEvent[]
+
+  humanTransfer HumanTransferSettings?
+  transferDepartments TransferDepartment[]
+  appointments  Appointment[]
+  couponRedemptions CouponRedemption[]
+
+  @@map("users")
+}
+
+/// Per-tenant "Human Call Transfer" configuration. One row per user (owner of an
+/// AI agent). One number the AI bridges the caller to when they ask for a human,
+/// how long it rings, and the line the AI speaks if the transfer can't connect.
+model HumanTransferSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  enabled       Boolean  @default(false)
+  /// E.164 phone number the call is transferred to.
+  transferNumber String  @default("")
+  /// How long the number rings before the AI gives up and speaks the end message.
+  ringTimeoutSec Int     @default(25)
+  /// Spoken by the AI when the transfer can't connect, before ending the call.
+  fallbackMessage String @default("Our support team isn't available right now. We've recorded your request and will contact you as soon as possible. Thank you for calling.")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("human_transfer_settings")
+}
+
+/// A named transfer department for one owner (e.g. "Sales", "Billing",
+/// "Support"). During a call the AI asks the caller which department they need,
+/// then warm-transfers them to that department's number. Each row becomes one
+/// destination on the assistant's transferCall tool; the `description` helps the
+/// LLM route the caller to the right one.
+model TransferDepartment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Spoken/label name the caller refers to, e.g. "Sales".
+  name        String
+  /// E.164 number the caller is warm-transferred to for this department.
+  number      String   @default("")
+  /// Optional hint that helps the AI decide when to pick this department
+  /// (e.g. "billing, invoices, refunds, payments").
+  description String   @default("")
+  /// Per-department on/off without deleting it.
+  enabled     Boolean  @default(true)
+  /// How long this department's number rings before the AI speaks its end message.
+  ringTimeoutSec Int   @default(15)
+  /// Spoken by the AI when this department's transfer can't connect, before ending the call.
+  fallbackMessage String @default("Our team isn't available right now. We've recorded your request and will contact you as soon as possible. Thank you for calling.")
+  /// Display + tie-break ordering.
+  order       Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("transfer_departments")
+}
+
+/// A named staff role — the source of truth for a bundle of permission keys
+/// (section capabilities + column-level `section.field.*` sub-permissions).
+/// Admins define roles once; staff are assigned a role and inherit its keys.
+model StaffRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String   @default("")
+  permissions String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members User[]
+
+  @@map("staff_roles")
+}
+
+model Profile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  businessName       String   @default("")
+  mobile             String   @default("")
+  website            String   @default("")
+  // Public support number customers call (from site analysis or entered manually);
+  // distinct from `receptionistNumber`, the AI's assigned Twilio number.
+  businessNumber     String   @default("")
+  address            String   @default("")
+  country            String   @default("")
+  // IANA zone the browser reported at signup (e.g. "Australia/Perth"). A signal
+  // used to resolve a sensible default for the agent's operating timezone
+  // (agentConfig.rules.timezone), not the source of truth itself. Blank when the
+  // browser didn't report one.
+  timezone           String   @default("")
+  industry           String   @default("")
+  plan               Plan     @default(free)
+
+  testMinutesUsed    Float    @default(0)
+  webTestMinutesUsed Float    @default(0)
+  webTestCycleStart  DateTime @default(now())
+
+  receptionistNumber String   @default("")
+  numberActivated    Boolean  @default(false)
+
+  // Call forwarding setup. The owner keeps their existing published number
+  // (businessNumber) and forwards its calls to the AI (receptionistNumber) at
+  // their carrier. forwardingMode is which behaviour they chose ("" = not set,
+  // "all" = forward every call, "overflow" = only busy/no-answer/after-hours);
+  // forwardingConfirmedAt is set when they mark forwarding as live. Self-reported
+  // — we can't verify another carrier's forwarding, only guide + track it.
+  forwardingMode        String    @default("")
+  forwardingConfirmedAt DateTime?
+
+  // Guided onboarding resume state. onboardingStep is the pending step to resume
+  // at (5=Services, 6=Voice, 7=Finish, 8=Pricing); 0 once finished or for direct
+  // sign-ups that skip the funnel. onboardingCompletedAt is set when fully done.
+  onboardingStep        Int       @default(0)
+  onboardingCompletedAt DateTime?
+
+  // First time the customer skipped or finished the "Get your AI receptionist
+  // live" quick-setup modal. Once set, the modal never auto-opens again (it can
+  // still be opened manually) — server-side so it survives a cache clear / new
+  // browser, unlike the old localStorage-only dismissal.
+  quickSetupSeenAt      DateTime?
+
+  // Billing / subscription. The card lives in Stripe's vault — we store IDs only.
+  subscriptionPlanId   String?
+  subscriptionPlan     SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  subscriptionStatus   String   @default("none") // none | trialing | active | past_due | canceled | suspended
+  // Whether the platform required a card at the moment THIS account signed up —
+  // the `onboarding.cardRequired` PlatformSetting, read once in createUser and
+  // frozen here. Never re-read at runtime, so an admin flipping that toggle can't
+  // retroactively wall a customer who is already using the app (same principle as
+  // trialMinutesAllocated below). false = the card-less free trial, which is what
+  // every pre-existing row reads and what the platform default gives.
+  cardRequiredAtSignup Boolean  @default(false)
+  // When this account's FIRST card was confirmed (/billing/confirm-card is the only
+  // writer). null = no card has ever landed. This is the card wall's signal — NOT
+  // subscriptionStatus, which Stripe's webhook writes out of band: /subscribe opens
+  // a real trial subscription before any card exists, so Stripe reports "trialing"
+  // and mirroring that would lift the wall for anyone who picks a plan and closes
+  // the tab. A positive, locally-owned flag can't be moved by an upstream event.
+  cardConfirmedAt      DateTime?
+  // Admin account lock. Set when an admin manually suspends the account; cleared
+  // on reactivate. Distinct from a grace-lapsed subscriptionStatus="suspended"
+  // (self-recoverable via /subscribe): an admin lock blocks login entirely and
+  // can only be lifted by an admin.
+  suspendedAt          DateTime?
+  // Auto-renew: when true (default) the trial auto-converts and the paid plan
+  // auto-renews + auto-charges the saved card on expiry. When false the plan ends
+  // at the current period (no charge) — mirrors Stripe's cancel_at_period_end.
+  autoRenew            Boolean  @default(true)
+  trialEndsAt          DateTime?
+  // Stripe card fingerprint (same physical card → same value across customers),
+  // stored so the same card can't be reused to open a second trial account.
+  cardFingerprint      String?  @unique
+
+  // Free-trial lifecycle. Allocations are snapshotted from the global PlatformSetting
+  // values when the trial starts so an admin changing the defaults later doesn't
+  // retroactively shift live trials. trialSecondsUsed is the atomic usage counter
+  // (seconds for sub-minute precision). trialStatus is the cached evaluation —
+  // active | expired_minutes | expired_date — recomputed whenever usage changes.
+  trialStartedAt       DateTime?
+  trialMinutesAllocated Float?
+  trialSecondsUsed     Float    @default(0)
+  trialStatus          String   @default("active") // active | expired_minutes | expired_date
+
+  // Paid-plan minute allowance for the CURRENT billing period. Snapshotted from
+  // the chosen plan's `includedMinutes` when the subscription goes active, and
+  // reset every renewal. planSecondsUsed is the atomic per-cycle usage counter.
+  planMinutesAllocated Float?
+  planSecondsUsed      Float    @default(0)
+  currentPeriodEnd     DateTime?
+
+  // Comma-separated usage-alert thresholds (e.g. "50,80,90") already emailed for
+  // the CURRENT cycle, so we email the owner at most once per crossing. Reset to
+  // "" whenever the allowance resets (trial start, new billing period).
+  usageAlertsSent      String   @default("")
+
+  // Post-trial grace period. When a trial ends without converting, the user's
+  // number is held (not released) until graceEndsAt; graceNotifyStage tracks the
+  // furthest reminder email already sent (granted → reminder → final) so the
+  // hourly sweep never double-sends. graceConsumedAt is set once the number has
+  // been released — terminal, so grace is never re-granted to the same account.
+  graceStartedAt          DateTime?
+  graceEndsAt             DateTime?
+  graceNotifyStage        String?
+  graceConsumedAt         DateTime?
+
+  // Pending downgrade: the plan the user will move to at period end (set on a
+  // downgrade request, applied + cleared at renewal). stripeScheduleId is the
+  // Stripe subscription schedule that swaps the price at the cycle boundary.
+  scheduledPlanId         String?
+  scheduledPlanEffectiveAt DateTime?
+  stripeScheduleId        String?
+
+  // The coupon redemption currently discounting this account, or null. A pointer
+  // to the LIVE one only (status "active") — spent/revoked redemptions stay in
+  // coupon_redemptions but are cleared from here, so reading "does this user have
+  // a discount right now" is a single column read instead of a redemption scan.
+  // At most one live discount per account: applying a second revokes the first.
+  activeCouponRedemptionId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+/// The agent record — holds agent_config JSON + data capture fields.
+model Conversion {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  agentConfig       Json
+  dataCaptureFields Json     @default("[]")
+  promptTemplateSnapshot String?
+
+  /// Provisioning state: a new signup is "pending" until an admin approves it.
+  status            String   @default("pending") // pending | approved
+  approvedAt        DateTime?
+
+  /// Live Vapi assistant id once synced.
+  vapiAssistantId   String?
+
+  /// Set when pushing `agentConfig` to the live assistant failed (usually a Vapi
+  /// outage). Saving always succeeds, so without this the DB and the live agent
+  /// diverge silently: the owner sees their new settings while callers keep
+  /// hearing the old ones. The scheduler retries every pending row until it
+  /// clears. Holds the FIRST divergence time — i.e. how long the live agent has
+  /// been stale — not the last attempt. Null means in sync.
+  vapiSyncPendingAt DateTime?
+  /// When the next retry is due (exponential backoff, see services/vapiSync.ts).
+  /// Null while pending means "parked": Vapi rejected the config itself (a 4xx),
+  /// so it stays flagged out of sync but is never re-pushed — only a corrected
+  /// save can clear it.
+  vapiSyncNextAt    DateTime?
+  /// Consecutive failed pushes; drives the backoff and the stuck-config alert.
+  vapiSyncAttempts  Int      @default(0)
+  /// Last failure reason, for support ("why is my agent still on the old script").
+  vapiSyncError     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  callLogs CallLog[]
+
+  @@index([vapiSyncNextAt])
+  @@map("conversions")
+}
+
+model CallLog {
+  id           String      @id @default(cuid())
+  conversionId String
+  conversion   Conversion  @relation(fields: [conversionId], references: [id], onDelete: Cascade)
+
+  type         CallType    @default(Web)
+  callerName   String      @default("Unknown")
+  callerNumber String      @default("")
+  durationSec  Int         @default(0)
+  outcome      CallOutcome @default(completed)
+  summary      String      @default("")
+  /// Short caller purpose/category (few words) for the SMS summary.
+  purpose      String      @default("")
+  /// What the call was about, for the inbox badge + filter: "booking" | "lead" |
+  /// "enquiry" | "support" | "spam", or "" when unclassified (pre-feature rows).
+  /// See lib/callIntent.ts — a plain string, not a DB enum, so adding a category
+  /// needs no migration and an odd model output normalises to "" instead of
+  /// failing the write.
+  intent       String      @default("")
+  /// Who set `intent`: "ai" (classified on ingest) or "user" (the owner corrected
+  /// it in the inbox). A user value is never overwritten by a later AI pass, and
+  /// the corrections double as labelled data for tuning the classifier.
+  intentSource String      @default("ai")
+  /// The team/department the caller asked to be connected to (e.g. "Sales"),
+  /// extracted by the assistant. Empty when they never asked for a human.
+  requestedDepartment String @default("")
+  /// Transfer result when the caller asked to be connected to a human:
+  /// "connected" (successfully bridged), "failed" (wanted a human but couldn't
+  /// connect — owner should call back), or "" (no transfer involved).
+  transferOutcome String   @default("")
+  recordingUrl String?
+
+  transcript   Json        @default("[]")
+  analysis     Json        @default("{}")
+
+  // Lazy, cached translation of `summary` + `transcript` into the owner's report
+  // language. Populated on first view; transcriptTranslatedLang records which
+  // language they're in so a later language change re-translates. Null = never
+  // translated. transcriptTranslatedLang is the shared marker for both fields.
+  transcriptTranslated     Json?
+  transcriptTranslatedLang String?
+  summaryTranslated        String?
+
+  // Public, unguessable slug + expiry for the "More info" conversation page linked
+  // from the summary SMS. Null publicId = no public page; shareExpiresAt null = never expires.
+  publicId       String?   @unique
+  shareExpiresAt DateTime?
+
+  createdAt    DateTime    @default(now())
+
+  @@index([conversionId, createdAt])
+  @@index([conversionId, intent])
+  @@map("call_logs")
+}
+
+model CrmIntegration {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  connectedProvider      String?
+  googleCalendarConnected Boolean @default(false)
+  customWebhookUrl       String   @default("")
+  nexleonUrl             String?  @map("perfexUrl")
+  nexleonFormKey         String?  @map("perfexFormKey")
+
+  // Google Calendar booking settings. bookingEnabled is the master switch that
+  // both tells the AI it may schedule appointments AND lets the server create the
+  // event post-call; it's independent of googleCalendarConnected so a user can
+  // stay connected but pause auto-booking. bookingDurationMin is the slot length
+  // used for every event. bookingCalendarId targets a specific calendar ("primary"
+  // by default). bookingTimezone is an optional IANA zone (e.g. "Australia/Sydney")
+  // stamped on the event; when blank we rely on the timezone offset the AI emits
+  // in the ISO start time. The AI already knows the business (master prompt +
+  // services), collects name/phone/email/reason, and its Business Hours define when
+  // to book — so no per-business booking config is needed.
+  bookingEnabled         Boolean  @default(false)
+  bookingDurationMin     Int      @default(30)
+  bookingCalendarId      String   @default("primary")
+  bookingTimezone        String   @default("")
+  // DORMANT — the "send callers a website booking link" feature was removed, so
+  // these are no longer read or written by any code. Left in place because
+  // dropping columns is a destructive migration on the shared DB; safe to remove
+  // later with an explicit, authorized migration. Booking is now simply: the AI
+  // books on the call when bookingEnabled (auto-book) is on AND Google Calendar
+  // is connected.
+  bookingLinkEnabled     Boolean  @default(false)
+  bookingUrl             String   @default("")
+  // DORMANT — kept in sync with the DB but no longer read/written by any code.
+  // Left in place because dropping them is a destructive migration on the shared
+  // database; safe to remove later with an explicit, authorized migration.
+  bookingLabel           String   @default("appointment")
+  bookingFields          String   @default("")
+  bookingHours           String   @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  webhookDeliveries WebhookDelivery[]
+
+  @@map("crm_integrations")
+}
+
+/// A single appointment booked through the website-first booking module — the
+/// record shown in the Booking Calendar/Overview tabs and the source of truth for
+/// the AI's cancel/reschedule tools. Deliberately minimal: no service, resource,
+/// or capacity — just who booked, when, and the linked Google event. `startAt` /
+/// `endAt` are stored in UTC; `timezone` is the owner's IANA zone the slot was
+/// generated in (so the UI can render local times even if the owner later moves
+/// zones). `source` is "ai" (booked by the receptionist) or "manual" (owner-added).
+model Appointment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  customerName  String   @default("")
+  customerPhone String   @default("")
+  customerEmail String   @default("")
+  notes         String   @default("")
+
+  startAt       DateTime
+  endAt         DateTime
+  timezone      String   @default("")
+
+  /// confirmed | cancelled
+  status        String   @default("confirmed")
+  /// ai | manual
+  source        String   @default("ai")
+  /// Linked Google Calendar event id (for reschedule/cancel); "" when no event.
+  googleEventId String   @default("")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, startAt])
+  @@map("booking_appointments")
+}
+
+/// Tracks each attempt to deliver call data to a user's CRM webhook.
+model WebhookDelivery {
+  id               String   @id @default(cuid())
+  crmIntegrationId String?
+  crmIntegration   CrmIntegration? @relation(fields: [crmIntegrationId], references: [id], onDelete: Cascade)
+  callLogId        String?
+
+  provider         String   // "custom" | "perfex"
+  url              String
+  status           Int      // HTTP status code (0 = network error)
+  success          Boolean
+  payload          Json
+  responseBody     String   @default("")
+  errorMessage     String   @default("")
+  durationMs       Int      @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([crmIntegrationId, createdAt])
+  @@map("webhook_deliveries")
+}
+
+model ChatConversation {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  humanTakeover Boolean @default(false)
+  createdAt    DateTime @default(now())
+
+  messages ChatMessage[]
+
+  @@map("chat_conversations")
+}
+
+/// A phone number tracked by the admin phone panel. Source of truth for the
+/// system pool + per-number metadata (added date, cost) the dashboard derives
+/// from `Profile.receptionistNumber` can't carry. A null `userId` means the
+/// number sits in the shared system pool (Free-plan callers); a set `userId`
+/// means it's assigned to that customer's agent (`assistantId` = live Vapi id).
+/// `twilioSid` ties the row back to the owning Twilio IncomingPhoneNumber.
+model PhoneNumber {
+  id                 String   @id @default(cuid())
+  number             String   @unique // E.164
+  provider           String   @default("twilio")
+  twilioSid          String?
+
+  /// Telephony health: active | inactive | pending. Distinct from poolStatus.
+  status             String   @default("active")
+  /// Pool lifecycle: AVAILABLE | ASSIGNED | PENDING_APPROVAL.
+  poolStatus         String   @default("AVAILABLE")
+
+  userId             String?
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Live Vapi assistant this number routes inbound calls to (when assigned).
+  assistantId        String?
+
+  /// Can this number SEND SMS (Twilio's `capabilities.sms`)? null = unknown,
+  /// which resolveSmsSender treats as "no" and falls back to the platform
+  /// sender — never assume a capability we haven't confirmed. Note most
+  /// geographic numbers outside NANP (e.g. Australian +61 2/3/7/8) are voice-only.
+  smsCapable         Boolean?
+
+  purchasePriceCents Int      @default(0)
+  monthlyPriceCents  Int      @default(5000)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+  @@map("phone_numbers")
+}
+
+/// Platform-level config (integration API keys etc.). Secret values are
+/// stored encrypted (isSecret = true). Keyed like "vapi.apiKey".
+model PlatformSetting {
+  key       String   @id
+  value     String
+  isSecret  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+/// Editable system-email templates (sign-up, verification, billing, staff, …).
+/// Seeded from code defaults; admins edit subject/body/enabled from Admin →
+/// System Emails. `alwaysOn` templates (e.g. verification codes) can't be
+/// disabled. Body is plain text with {{variables}} rendered to HTML on send.
+model EmailTemplate {
+  key         String   @id            // stable code id, e.g. "email_verification"
+  category    String                  // "Authentication" | "Billing" | "Account" | "Staff" | "Calls"
+  name        String
+  description String   @default("")
+  audience    String   @default("User") // "User" | "Admin" | "Staff"
+  subject     String
+  body        String
+  variables   String[] @default([])
+  enabled     Boolean  @default(true)
+  alwaysOn    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+/// Short-lived email OTP codes for sign-up verification and password reset.
+/// Codes are stored hashed; `payload` holds the pending sign-up data until verified.
+model VerificationCode {
+  id         String              @id @default(cuid())
+  email      String
+  purpose    VerificationPurpose
+  codeHash   String
+  payload    Json?
+  attempts   Int                 @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@index([email, purpose])
+  @@map("verification_codes")
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  topic       String   // "Demo call" | "Strategy call" | "Agent build meeting"
+  name        String
+  email       String
+  phone       String   @default("")
+  preferredAt String   @default("") // chosen date + time (free text)
+  message     String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@map("bookings")
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String   // "user" | "assistant" | "human"
+  content        String
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("chat_messages")
+}
+
+/// Admin/ops audit trail — one row per sensitive admin mutation. Best-effort:
+/// writing a row never blocks the mutation it records.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String   @default("")
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ip         String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Admin-created subscription plan. Customers pick one at signup and get a
+/// free trial (trial length is GLOBAL — PlatformSetting "trial.days", default 14).
+model SubscriptionPlan {
+  id              String   @id @default(cuid())
+  name            String   // short key, e.g. "starter"
+  displayName     String   // customer-facing, e.g. "Starter"
+  description     String   @default("")
+  priceCents      Int      @default(0)
+  currency        String   @default("usd")
+  interval        String   @default("month") // week | month | year
+  includedMinutes Int      @default(0)       // call minutes granted per billing period
+  features        Json     @default("[]")    // string[] — marketing bullets (display only)
+  // Real entitlement flags: services check these to gate the feature per plan tier.
+  smsEnabled      Boolean  @default(false)    // post-call owner SMS summaries
+  // "SMS to Caller": the AI texts a caller details they ask for mid-call. Split
+  // from smsEnabled so the two can be sold apart — that flag is about texting the
+  // OWNER a summary, this one about texting the CALLER. Existing plans are
+  // backfilled from smsEnabled (scripts/backfillSmsToCaller.ts) so nobody's
+  // entitlement changes on deploy.
+  smsToCallerEnabled Boolean @default(false)
+  whatsappEnabled Boolean  @default(false)    // WhatsApp summaries + inbound AI auto-reply
+  customCrmEnabled Boolean @default(false)    // Custom CRM (webhook) lead delivery
+  multilingualEnabled Boolean @default(false) // AI answers in the caller's language (languages picked in AI Brain)
+  transcriptsEnabled Boolean @default(true)   // "Summary, Transcript & Recording" bullet shown for this plan
+  allowedVoices   Json     @default("[]")     // DEPRECATED (kept for back-compat) — gating now uses voiceCategory
+  // Voice Bank: the single category of voices customers on this plan may choose in
+  // the AI Brain. Null = no picker (they stay on the default voice). SetNull so
+  // deleting a category leaves plans intact.
+  voiceCategoryId String?
+  voiceCategory   VoiceCategory? @relation(fields: [voiceCategoryId], references: [id], onDelete: SetNull)
+  stripeProductId String?
+  stripePriceId   String?
+  active          Boolean  @default(true)
+
+  // Display ordering on subscribe page (lower = first).
+  sortOrder             Int      @default(0)
+  // "Recommended" / "Popular" highlight on the subscribe page.
+  recommended           Boolean  @default(false)
+  // Pre-selected plan on the onboarding subscribe page. At most one plan is
+  // default — setting it on one plan clears it on the others.
+  isDefault             Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profiles  Profile[]
+
+  @@map("subscription_plans")
+}
+
+/// Voice Bank category — an admin-curated named set of voices (from BOTH providers:
+/// Deepgram short names + ElevenLabs voice_ids). A plan points at one category to
+/// decide which voices its customers can pick in the AI Brain.
+model VoiceCategory {
+  id        String   @id @default(cuid())
+  title     String
+  voiceIds  Json     @default("[]") // string[] — voice ids (Deepgram names + ElevenLabs voice_ids)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plans     SubscriptionPlan[]
+
+  @@map("voice_categories")
+}
+
+/// An admin-created discount code. Redeemed by a customer at checkout or granted
+/// directly by an admin, it discounts the plan price (`percentOff`) and/or tops up
+/// the cycle's call minutes (`bonusMinutes`) for a bounded number of billing
+/// cycles.
+///
+/// Duration is counted in BILLING CYCLES by us, never in Stripe's calendar months.
+/// `renewActivePlanIfExhausted` renews a subscription early whenever the included
+/// minutes run out, so a heavy user can burn several cycles inside one calendar
+/// month — Stripe's `duration_in_months` would silently discount all of them. See
+/// services/coupons.ts and BILLING_ARCHITECTURE.md.
+model Coupon {
+  id               String   @id @default(cuid())
+  /// The code the customer types. Normalized to UPPERCASE on write, so lookups
+  /// and the unique constraint are case-insensitive in practice.
+  code             String   @unique
+  /// Customer-facing name shown at checkout, e.g. "Launch offer".
+  displayName      String
+  description      String   @default("")
+
+  /// Percentage off the recurring plan price (1..100). Mirrored to a Stripe
+  /// coupon, which does the arithmetic on subscription invoices.
+  percentOff       Int?
+  /// Extra call minutes granted on top of the plan's `includedMinutes`, every
+  /// cycle the discount is live. Purely ours — never sent to Stripe.
+  bonusMinutes     Int?
+
+  /// How many billing cycles the discount lasts once redeemed. 1 = the first
+  /// charge only.
+  durationCycles   Int      @default(1)
+
+  /// The REDEMPTION window — when the code may be entered. Distinct from
+  /// `durationCycles` (how long the discount lasts afterwards): a closed window
+  /// stops new redemptions but never cancels a discount already running.
+  startsAt         DateTime?
+  expiresAt        DateTime?
+
+  /// Global supply cap (null = unlimited). Compared against `redeemedCount` PLUS
+  /// live `pending` reservations, so an in-flight checkout can't oversell it.
+  maxRedemptions   Int?
+  /// Redemptions that actually converted (money moved). Incremented in
+  /// activateRedemption, never at reservation time.
+  redeemedCount    Int      @default(0)
+
+  /// Restrict to customers who have never held a paid plan. Checked against
+  /// PlanEvent history rather than current status — a customer who cancelled and
+  /// came back is not new.
+  newCustomersOnly Boolean  @default(true)
+  /// Plans this code may be redeemed against; empty = every plan. Gates
+  /// REDEMPTION only — a later plan change never cancels a running discount.
+  planIds          String[] @default([])
+
+  active           Boolean  @default(true)
+  /// The mirrored Stripe coupon object that performs the discount.
+  stripeCouponId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  redemptions CouponRedemption[]
+
+  @@map("coupons")
+}
+
+/// One user's use of one coupon. The row is PERMANENT once the discount goes
+/// live: `@@unique([couponId, userId])` is what stops the same user redeeming the
+/// same code twice, enforced in the database so a race or double-submit can't
+/// slip past it. A spent redemption stays as `exhausted` precisely because it is
+/// the record that blocks re-entry.
+///
+/// status:
+///   pending   — slot held during checkout, before any money moved. DELETED (not
+///               marked) by the scheduler sweep after 30 minutes: a row left
+///               behind would trip the unique constraint and lock the user out of
+///               a code they abandoned and never actually used.
+///   active    — discount is live and consuming cycles.
+///   exhausted — `durationCycles` spent; discount detached, row kept as a block.
+///   revoked   — cancelled early (replaced by another coupon, or an admin removed
+///               it). Still blocks re-entry unless the admin explicitly released
+///               the slot, which deletes the row instead.
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponId   String
+  coupon     Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status     String   @default("pending")
+  /// Billing cycles consumed so far, counted by us on every renewal — early
+  /// (minutes-exhausted) and date-based alike.
+  cyclesUsed Int      @default(0)
+  /// The billing period a cycle was last counted for. Makes consumption
+  /// idempotent: an early renewal counts its cycle AND fires a
+  /// `customer.subscription.updated` webhook that would otherwise count the same
+  /// cycle a second time, silently halving the customer's discount. A genuine
+  /// later renewal carries a different period end, so it still counts.
+  lastCountedPeriodEnd DateTime?
+  /// The Stripe invoice a cycle was last counted for — the precise idempotency
+  /// key, since one paid invoice is exactly one charge is exactly one cycle.
+  /// lastCountedPeriodEnd alone could not tell a repeat event apart from a
+  /// genuine second charge: an early renewal anchors the new cycle at "now", so
+  /// two renewals on the same day report period ends minutes apart and the
+  /// second was discarded as a duplicate — the discount then never used up its
+  /// budget. Period end remains the fallback when no invoice id is available.
+  lastCountedInvoiceId String?
+
+  /// When the slot was reserved (checkout started). Drives the stale-pending sweep.
+  reservedAt DateTime @default(now())
+  /// When it went live — i.e. when money actually moved. Null while pending.
+  appliedAt  DateTime?
+  /// When it stopped discounting (exhausted or revoked).
+  endedAt    DateTime?
+  /// Admin user id when the coupon was granted rather than self-redeemed.
+  grantedBy  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([couponId, userId])
+  @@index([userId, status])
+  @@map("coupon_redemptions")
+}
+
+/// A commission credit for a reseller, accrued from a referred customer's payment.
+model Commission {
+  id                 String   @id @default(cuid())
+  resellerId         String
+  reseller           User     @relation("ResellerCommissions", fields: [resellerId], references: [id], onDelete: Cascade)
+  customerId         String
+  customer           User     @relation("CustomerCommissions", fields: [customerId], references: [id], onDelete: Cascade)
+
+  amountCents        Int
+  percent            Float
+  invoiceAmountCents Int
+  stripeInvoiceId    String?
+  status             String   @default("pending") // pending | paid
+
+  createdAt DateTime @default(now())
+
+  @@index([resellerId, createdAt])
+  @@map("commissions")
+}
+
+/// Plan lifecycle history — one row per subscription event (trial started,
+/// converted, upgraded, downgraded, renewed, canceled…). Plan NAMES are
+/// denormalized so the history survives a plan rename or deletion. Written
+/// best-effort via recordPlanEvent() (same philosophy as AuditLog) — a failed
+/// history write never blocks the billing mutation it documents.
+model PlanEvent {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type         String   // trial_started | trial_converted | upgraded | downgrade_scheduled | downgraded | downgrade_canceled | plan_switched | renewed | canceled
+  fromPlanId   String?
+  fromPlanName String?
+  toPlanId     String?
+  toPlanName   String?
+  /// The destination plan's recurring price at the time of the event.
+  priceCents   Int      @default(0)
+  currency     String   @default("usd")
+  /// Money actually charged for THIS event (0 for free transitions).
+  amountCents  Int      @default(0)
+  note         String   @default("")
+
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("plan_events")
+}
+
+/// In-app notification surfaced by the bell. Created server-side on real events
+/// (calls, signups, approvals). Scoped to one user; read state + cleared per user.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // missed_call | new_lead | billing | agent | system
+  title     String
+  message   String   @default("")
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ------------------------------------------------------------------
+//  API Center — telemetry for every third-party API this platform calls.
+//  See services/apiProviders.ts (what a provider IS), services/apiTrace.ts
+//  (who writes these rows) and services/apiCenter.ts (what reads them).
+// ------------------------------------------------------------------
+
+/// One outbound third-party API call, written by the tracer. Every number on the
+/// API Center — uptime, latency percentiles, error rate, spend, quota headroom —
+/// is derived from this table, so it is deliberately wide and append-only.
+///
+/// Written fire-and-forget in batches (see apiTrace.ts): a request never waits on
+/// its own telemetry, and losing a buffered batch on shutdown costs a few rows of
+/// analytics, never a user-facing failure.
+model ApiRequestLog {
+  id           String   @id @default(cuid())
+  /// Trace key matching ProviderDef.id in services/apiProviders.ts.
+  provider     String
+  /// Path with volatile ids replaced by `:id`, so calls to the same endpoint
+  /// group into one row on the Errors/Logs screens instead of thousands.
+  endpoint     String   @default("")
+  method       String   @default("GET")
+  /// HTTP status, or 0 when the request never got a response (DNS, TLS, timeout).
+  status       Int      @default(0)
+  ok           Boolean  @default(true)
+  durationMs   Int      @default(0)
+  environment  String   @default("production") // production | sandbox
+  errorCode    String   @default("")
+  errorMessage String   @default("")
+  /// Billable units this call consumed — tokens, characters, seconds, segments.
+  /// Zero when the tracer had no way to measure them (see CostConfidence).
+  units        Float    @default(0)
+  /// Cost in micro-USD (millionths of a dollar). Integer maths so summing
+  /// millions of sub-cent rows can't accumulate float drift.
+  costMicroUsd Int      @default(0)
+  /// Rate-limit headroom the vendor advertised on this response, when it does.
+  rateLimit     Int?
+  rateRemaining Int?
+  rateResetAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  /// The three shapes every API Center query takes: one provider over time,
+  /// the whole fleet over time, and one provider's failures over time.
+  @@index([provider, createdAt])
+  @@index([createdAt])
+  @@index([provider, ok, createdAt])
+  @@map("api_request_logs")
+}
+
+/// Admin-editable, per-provider configuration for the API Center: the quota to
+/// measure headroom against, the unit price behind cost estimates, and key
+/// expiry. Rows are created lazily — a provider with no row uses the defaults
+/// from PROVIDER_DEFS, so adding a vendor needs no seed step.
+model ApiProviderSetting {
+  provider String @id
+
+  /// Units allowed per calendar month by the vendor plan; 0 = unmetered/unknown,
+  /// which the UI renders as "—" rather than a 0% meter that reads as "empty".
+  monthlyQuota     Int  @default(0)
+  /// Overrides ProviderDef.defaultUnitCostUsd, in micro-USD per unit. Null =
+  /// use the code default.
+  unitCostMicroUsd Int?
+  /// Requests/minute ceiling; 0 = unknown.
+  rateLimitPerMin  Int  @default(0)
+  environment      String @default("production")
+  /// When the key in use expires, for vendors that issue expiring credentials.
+  keyExpiresAt     DateTime?
+  /// Keep collecting telemetry but stop alerting — for a vendor with a known
+  /// open incident, so its noise doesn't bury a new problem elsewhere.
+  muted            Boolean @default(false)
+  notes            String  @default("")
+
+  updatedAt DateTime @updatedAt
+
+  @@map("api_provider_settings")
+}
+
+/// A threshold that turns API Center telemetry into an alert.
+model ApiAlertRule {
+  id     String  @id @default(cuid())
+  /// Null applies the rule to every provider — one "error rate > 5%" rule covers
+  /// vendors added later without anyone remembering to add a rule for them.
+  provider String?
+  metric   String  // error_rate | latency_p95 | quota_used | uptime | no_traffic
+  comparator String @default("gt") // gt | lt
+  threshold  Float
+  /// Minutes of history the rule is evaluated over.
+  windowMin  Int    @default(60)
+  severity   String @default("warning") // warning | critical
+  enabled    Boolean @default(true)
+  /// Suppress re-firing for this many minutes after the rule last fired.
+  cooldownMin Int   @default(60)
+  lastFiredAt DateTime?
+
+  events ApiAlertEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled])
+  @@map("api_alert_rules")
+}
+
+/// One firing of an ApiAlertRule — the Alerts page's history feed. Kept as its
+/// own row (rather than a flag on the rule) so an alert can be acknowledged and
+/// resolved independently of the rule that raised it.
+model ApiAlertEvent {
+  id     String       @id @default(cuid())
+  ruleId String
+  rule   ApiAlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  provider  String
+  metric    String
+  severity  String @default("warning")
+  /// The value that tripped the threshold, and the threshold it tripped — kept
+  /// on the event so history stays truthful after the rule is edited.
+  value     Float
+  threshold Float
+  message   String @default("")
+
+  acknowledgedAt DateTime?
+  /// Set when the metric came back inside the threshold.
+  resolvedAt     DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([provider, createdAt])
+  @@map("api_alert_events")
+}
+
+/// Persisted cache of Vapi prompt summaries. Compressing the master prompt for
+/// the live/test assistant needs an OpenAI call (several seconds); the result is
+/// deterministic per prompt, so it's cached here keyed by the prompt's SHA-1.
+/// Unlike the in-memory cache this survives restarts / cold starts, so a test
+/// call or assistant re-sync on a freshly-woken instance doesn't re-pay the
+/// summariser latency for an unchanged prompt.
+model PromptCache {
+  hash      String   @id
+  summary   String
+  createdAt DateTime @default(now())
+
+  @@map("prompt_cache")
+}
