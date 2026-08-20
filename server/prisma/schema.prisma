@@ -190,6 +190,13 @@ model Profile {
   industry           String   @default("")
   plan               Plan     @default(free)
 
+  // Photo shown for this account's AI receptionist (dashboard greeting banner,
+  // onboarding persona). Blank → the platform-wide branding avatar for the
+  // voice's gender, then the built-in stock headshot. `Key` is the S3 object
+  // key, kept so a replaced photo can be deleted rather than orphaned.
+  assistantAvatarUrl String   @default("")
+  assistantAvatarKey String   @default("")
+
   testMinutesUsed    Float    @default(0)
   webTestMinutesUsed Float    @default(0)
   webTestCycleStart  DateTime @default(now())

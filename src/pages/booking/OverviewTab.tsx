@@ -27,7 +27,7 @@ import { zonedTile, zonedTime } from "./dateUtils";
 
 /* Accents used for the metric chips — same palette as the Dashboard tiles. */
 const ACCENT = {
-  brand: "#2C76ED",
+  brand: "#EB7D00",
   good: "#31C14F",
   warn: "#F5A524",
   off: "#8A8A8A",

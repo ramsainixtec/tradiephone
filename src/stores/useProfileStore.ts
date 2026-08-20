@@ -21,6 +21,10 @@ interface ProfileState {
   profile: Profile;
   hydrate: () => Promise<void>;
   updateProfile: (patch: Partial<Profile>) => void;
+  /** Mirror the avatar the upload endpoint just returned. Local-only on
+   *  purpose: the file is written by POST /profile/avatar, so routing it
+   *  through updateProfile() would fire a second, empty PATCH. */
+  setAssistantAvatar: (url: string) => void;
   /** Persist call-forwarding choice / confirmation. `confirmed` maps to the
    *  forwardingConfirmedAt timestamp server-side (true = now, false = clear). */
   saveForwarding: (patch: { mode?: Profile["forwardingMode"]; confirmed?: boolean }) => void;
@@ -53,6 +57,8 @@ export const useProfileStore = create<ProfileState>()(
           /* never throw out of hydrate */
         }
       },
+      setAssistantAvatar: (assistantAvatarUrl) =>
+        set((s) => ({ profile: { ...s.profile, assistantAvatarUrl } })),
       updateProfile: (patch) => {
         set((s) => ({ profile: { ...s.profile, ...patch } }));
         // The auth store backs the header greeting/chip; keep its name in sync so

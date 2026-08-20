@@ -1,11 +1,11 @@
 {
-  "name": "tradiephone.ai — Voice Receptionist",
-  "short_name": "Tradie Phone",
+  "name": "Tradie Call — AI Voice Receptionist",
+  "short_name": "Tradie Call",
   "description": "24/7 AI Voice Receptionist Dashboard",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f5f7fa",
-  "theme_color": "#2C76ED",
+  "theme_color": "#EB7D00",
   "icons": [
     {
       "src": "/favicon.svg",

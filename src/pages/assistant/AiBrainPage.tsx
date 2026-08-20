@@ -247,8 +247,9 @@ export default function AiBrainPage() {
                 style={
                   isActive
                     ? {
-                        backgroundColor: `var(${s.colorVar})`,
-                        ["--tw-ring-color" as string]: `color-mix(in srgb, var(${s.colorVar}) 35%, transparent)`,
+                        backgroundColor: "var(--color-primary)",
+                        ["--tw-ring-color" as string]:
+                          "color-mix(in srgb, var(--color-primary) 35%, transparent)",
                       }
                     : done
                       ? { backgroundColor: "var(--color-success)" }
@@ -322,7 +323,7 @@ export default function AiBrainPage() {
           {/* Icon + heading share one aligned row; the description sits full-width
               below on phones and tucks beside the icon again from sm up. */}
           <div className="flex items-center gap-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-[#1d4ed8] text-primary-foreground shadow-[var(--shadow-soft)] sm:size-12">
+            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[var(--shadow-soft)] sm:size-12">
               <Brain className="size-5 sm:size-6" />
             </div>
             <h1 className="text-xl font-bold leading-tight">AI Brain</h1>
@@ -400,23 +401,21 @@ export default function AiBrainPage() {
                   onClick={() => requestTab(s.key)}
                   className={cn(
                     "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
-                    isActive ? "bg-muted" : "hover:bg-muted/60",
+                    isActive ? "bg-primary-tint" : "hover:bg-muted/60",
                   )}
                 >
                   {/* active accent bar on the left edge */}
                   {isActive && (
-                    <span
-                      className="absolute inset-y-2 left-0 w-0.5 rounded-full"
-                      style={{ backgroundColor: `var(${s.colorVar})` }}
-                    />
+                    <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-primary" />
                   )}
                   {/* numbered step badge */}
                   <span
                     className={cn(
                       "grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold transition-colors",
-                      isActive ? "text-white" : "bg-muted/60 text-foreground",
+                      isActive
+                        ? "bg-primary text-white"
+                        : "border border-border text-muted-foreground",
                     )}
-                    style={isActive ? { backgroundColor: `var(${s.colorVar})` } : undefined}
                   >
                     {step}
                   </span>
@@ -465,9 +464,24 @@ export default function AiBrainPage() {
               Next <ChevronRight className="size-4" />
             </Button>
           </div>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            Step {activeIndex + 1} of {SECTIONS.length}
-          </p>
+          <div className="mt-3 px-1">
+            <p className="text-xs text-muted-foreground">
+              Step {activeIndex + 1} of {SECTIONS.length}
+            </p>
+            <div
+              className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-valuenow={activeIndex + 1}
+              aria-valuemin={1}
+              aria-valuemax={SECTIONS.length}
+              aria-label="Setup progress"
+            >
+              <span
+                className="block h-full rounded-full bg-primary transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{ width: `${((activeIndex + 1) / SECTIONS.length) * 100}%` }}
+              />
+            </div>
+          </div>
 
           {/* Test-call card — same action as the header's Test call button, kept
               in view under the step rail so it's always one tap away. */}
@@ -477,15 +491,16 @@ export default function AiBrainPage() {
             disabled={dirty || saving}
             title={dirty || saving ? "Save your changes to enable test calls" : undefined}
             className={cn(
-              "mt-3 flex w-full flex-col items-center gap-4 rounded-2xl border border-border bg-card px-4 py-8 shadow-[var(--shadow-soft)] transition-colors",
+              "mt-3 flex w-full flex-col items-center gap-4 rounded-2xl border border-border bg-card px-4 py-6 shadow-[var(--shadow-soft)] transition-colors",
               dirty || saving
                 ? "cursor-not-allowed opacity-50"
-                : "hover:border-emerald-300 hover:bg-emerald-50/60 active:scale-[0.99] dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40",
+                : "hover:border-primary/40 hover:bg-primary-tint-soft active:scale-[0.99]",
             )}
           >
-            <span className="grid place-items-center rounded-full bg-emerald-100/70 p-4 dark:bg-emerald-500/10">
-              <span className="grid place-items-center rounded-full bg-emerald-200/60 p-3 dark:bg-emerald-500/15">
-                <span className="relative grid size-16 place-items-center rounded-full bg-linear-to-b from-emerald-400 to-green-500 text-white shadow-md">
+            <span className="w-full text-left text-sm font-semibold">Test your assistant</span>
+            <span className="grid place-items-center rounded-full bg-primary-tint-soft p-4">
+              <span className="grid place-items-center rounded-full bg-primary-tint p-3">
+                <span className="relative grid size-16 place-items-center rounded-full bg-primary text-white shadow-md">
                   {!dirty && !saving && (
                     <>
                       <span aria-hidden className="call-wave motion-reduce:hidden" />
@@ -502,12 +517,17 @@ export default function AiBrainPage() {
                 </span>
               </span>
             </span>
-            <span className="text-center">
-              <span className="block text-sm font-semibold text-indigo-950 dark:text-foreground">
+            <span className="w-full text-center">
+              <span className="block text-sm font-semibold text-[var(--color-primary-ink)]">
                 Test call
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
                 Press to check audio quality
+              </span>
+              {/* Looks like a button, is a span: the whole card is already the
+                  <button>, and nesting one inside another is invalid markup. */}
+              <span className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold">
+                <PhoneCall className="size-4" /> Start Test Call
               </span>
             </span>
           </button>

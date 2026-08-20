@@ -259,6 +259,14 @@ export const api = {
   },
   profile: {
     get: () => get<Profile>("/api/profile"),
+    /** Replace this account's AI-receptionist photo. Returns the new public URL. */
+    uploadAvatar: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return upload<{ assistantAvatarUrl: string }>("/api/profile/avatar", form);
+    },
+    /** Clear it — the platform branding avatar (or stock headshot) takes over. */
+    removeAvatar: () => del<{ assistantAvatarUrl: string }>("/api/profile/avatar"),
     update: (
       data: Partial<
         Pick<

@@ -7,7 +7,7 @@ import { useId } from "react";
  * ------------------------------------------------------------------ */
 
 export const CHART_COLORS = {
-  primary: "#2C76ED",
+  primary: "#EB7D00",
   success: "#10B981",
   danger: "#F43F5E",
   warning: "#F59E0B",

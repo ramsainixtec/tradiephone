@@ -1,4 +1,14 @@
-import { Copy, Eye, Globe, MoreHorizontal, Phone, PhoneOff, SearchX } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Copy,
+  Eye,
+  Globe,
+  MoreHorizontal,
+  Phone,
+  PhoneOff,
+  SearchX,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +57,8 @@ export function CallTable({
   onSelect,
   filtersActive = false,
   onClearFilters,
+  dateDesc = true,
+  onToggleDateSort,
 }: {
   calls: CallLog[];
   selectedId: string | null;
@@ -54,6 +66,10 @@ export function CallTable({
   /** True when a search/outcome/date filter is narrowing the list. */
   filtersActive?: boolean;
   onClearFilters?: () => void;
+  /** Current date sort direction — the parent owns the ordering. */
+  dateDesc?: boolean;
+  /** Omit to render Date & Time as a plain, non-interactive header. */
+  onToggleDateSort?: () => void;
 }) {
   // `calls` arrives already filtered by the inbox; the hook only pages it.
   const { page, pageSize, pageItems: rows, total, setPage, setPageSize } = usePagination(calls);
@@ -89,7 +105,12 @@ export function CallTable({
   const renderActions = (call: CallLog) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Row actions">
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Row actions"
+          className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
+        >
           <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>
@@ -147,7 +168,23 @@ export function CallTable({
             <tr className="border-b border-border bg-warm text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Caller</th>
-              <th className="px-4 py-3">Date</th>
+              <th
+                className="px-4 py-3"
+                aria-sort={onToggleDateSort ? (dateDesc ? "descending" : "ascending") : undefined}
+              >
+                {onToggleDateSort ? (
+                  <button
+                    type="button"
+                    onClick={onToggleDateSort}
+                    className="-mx-1.5 inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 uppercase tracking-wide transition-colors hover:bg-muted hover:text-foreground focus-visible:focus-ring"
+                  >
+                    Date &amp; Time
+                    {dateDesc ? <ArrowDown className="size-3.5" /> : <ArrowUp className="size-3.5" />}
+                  </button>
+                ) : (
+                  <>Date &amp; Time</>
+                )}
+              </th>
               <th className="px-4 py-3">Duration</th>
               <th className="px-4 py-3">Outcome</th>
               <th className="px-4 py-3">Summary</th>

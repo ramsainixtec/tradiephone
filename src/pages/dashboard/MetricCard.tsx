@@ -20,6 +20,10 @@ export interface MetricCardProps {
   onClick?: () => void;
   /** Hex accent that tints the icon chip + top hairline. */
   accent?: string;
+  /** Place the chart beside the value instead of below it. For single-visual
+   *  cards (a gauge, a donut) this keeps the card short; cards whose chart is a
+   *  full-width series must stay stacked. */
+  chartSide?: boolean;
   /** Stagger index for the entrance animation. */
   index?: number;
 }
@@ -34,7 +38,8 @@ export function MetricCard({
   icon,
   className,
   onClick,
-  accent = "#2C76ED",
+  accent = "#EB7D00",
+  chartSide = false,
   index = 0,
 }: MetricCardProps) {
   const showTrend = typeof trend === "number";
@@ -74,16 +79,13 @@ export function MetricCard({
           <div className="flex items-center gap-2.5">
             {icon && (
               <span
-                className="flex size-9 items-center justify-center rounded-xl text-white shadow-sm [&_svg]:size-[18px]"
-                style={{
-                  background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                  boxShadow: `0 4px 12px -3px ${accent}66`,
-                }}
+                className="flex size-9 items-center justify-center rounded-xl [&_svg]:size-[18px]"
+                style={{ background: `${accent}1f`, color: accent }}
               >
                 {icon}
               </span>
             )}
-            <span className="text-sm font-medium text-muted-foreground">{title}</span>
+            <span className="text-[15px] font-semibold tracking-tight text-foreground">{title}</span>
           </div>
           <div className="flex items-center gap-1.5">
             {showTrend && (
@@ -103,14 +105,20 @@ export function MetricCard({
           </div>
         </div>
 
-        <div className="mt-3.5 flex items-end justify-between gap-3">
+        <div
+          className={cn(
+            "mt-3.5 flex justify-between gap-3",
+            chartSide ? "flex-1 items-center" : "items-end",
+          )}
+        >
           <div>
             <div className="text-[26px] font-bold leading-none tracking-tight">{value}</div>
             {caption && <p className="mt-1.5 text-xs text-muted-foreground">{caption}</p>}
           </div>
+          {chartSide && <div className="shrink-0">{chart}</div>}
         </div>
 
-        <div className="mt-4 flex-1">{chart}</div>
+        {!chartSide && <div className="mt-4 flex-1">{chart}</div>}
 
         {footer && <div className="mt-3 border-t border-border/70 pt-3">{footer}</div>}
       </CardContent>
