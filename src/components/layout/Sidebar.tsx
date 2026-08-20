@@ -317,7 +317,7 @@ export function Sidebar() {
                   <PhoneCall className="size-5" />
                 </div>
                 <span className="truncate text-[15px] font-semibold leading-tight">
-                  Tradie<span className="text-primary">Call</span>
+                  tradiephone<span className="text-primary">.ai</span>
                 </span>
               </BrandLogo>
             </NavLink>

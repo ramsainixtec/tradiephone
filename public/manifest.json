@@ -1,6 +1,6 @@
 {
-  "name": "Tradie Call — AI Voice Receptionist",
-  "short_name": "Tradie Call",
+  "name": "Tradie Phone — AI Voice Receptionist",
+  "short_name": "Tradie Phone",
   "description": "24/7 AI Voice Receptionist Dashboard",
   "start_url": "/dashboard",
   "display": "standalone",

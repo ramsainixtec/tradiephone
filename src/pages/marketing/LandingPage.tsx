@@ -217,7 +217,7 @@ export default function LandingPage() {
                 <PhoneCall className="size-5" />
               </span>
               <span className="text-[17px]">
-                Tradie<span className="text-primary">Call</span>
+                tradiephone<span className="text-primary">.ai</span>
               </span>
             </BrandLogo>
           </Link>

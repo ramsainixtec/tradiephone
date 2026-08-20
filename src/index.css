@@ -6,7 +6,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ------------------------------------------------------------------ *
- *  Tradie Call — design tokens
+ *  Tradie Phone — design tokens
  *  Theme: golden workwear amber (#EB7D00), Inter, light cool surfaces.
  *  The whole UI keys off these semantic tokens.
  * ------------------------------------------------------------------ */
