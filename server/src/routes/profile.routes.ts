@@ -1,10 +1,12 @@
 import express from "express";
+import multer from "multer";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import { asyncHandler, notFound, badRequest, HttpError } from "../lib/http.js";
 import { clampName, titleCaseName, DEFAULT_AGENT_CONFIG } from "../lib/agentConfig.js";
 import { normalizeCountry } from "../lib/countryStyles.js";
 import { requireAuth } from "../middleware/auth.js";
+import { uploadObject, deleteObject, isStorageConfigured } from "../services/storage.js";
 import {
   isTwilioConfigured,
   listTwilioNumbers,
@@ -231,7 +233,84 @@ router.get(
       where: { id: req.user!.sub },
       select: { email: true, fullName: true },
     });
-    res.json({ ...profile, email: user?.email, fullName: user?.fullName });
+    const { assistantAvatarKey: _key, ...safe } = profile;
+    res.json({ ...safe, email: user?.email, fullName: user?.fullName });
+  }),
+);
+
+/* --------------------------- Assistant avatar ---------------------------- *
+ *  The photo shown for THIS account's receptionist (dashboard greeting banner,
+ *  onboarding persona). Falls back to the platform branding avatar, then to a
+ *  built-in stock headshot — see avatarForVoice() on the client.
+ * ------------------------------------------------------------------------- */
+
+// Photos only: SVG is deliberately excluded here even though the admin branding
+// uploader accepts it. A branding logo is chosen by a platform admin; this file
+// is chosen by any customer, and an SVG can carry script.
+const AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4 MB — it renders at 68px
+  fileFilter: (_req, file, cb) => {
+    if (AVATAR_TYPES.has(file.mimetype)) cb(null, true);
+    else cb(badRequest("Only PNG, JPEG or WebP images are allowed."));
+  },
+});
+
+router.post(
+  "/avatar",
+  avatarUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!isStorageConfigured()) {
+      throw badRequest("File storage isn't configured yet — ask your admin to finish the setup.");
+    }
+    if (!req.file) throw badRequest("No file uploaded.");
+
+    const userId = req.user!.sub;
+    const existing = await prisma.profile.findUnique({
+      where: { userId },
+      select: { assistantAvatarKey: true },
+    });
+
+    const { url, key } = await uploadObject(
+      `assistant-avatars/${userId}`,
+      req.file.buffer,
+      req.file.mimetype,
+      req.file.originalname,
+    );
+
+    await prisma.profile.update({
+      where: { userId },
+      data: { assistantAvatarUrl: url, assistantAvatarKey: key },
+    });
+
+    // Drop the replaced object only AFTER the new one is committed, so a failed
+    // upload or write never leaves the account with no photo at all.
+    if (existing?.assistantAvatarKey) {
+      void deleteObject(existing.assistantAvatarKey).catch(() => {});
+    }
+
+    res.json({ assistantAvatarUrl: url });
+  }),
+);
+
+router.delete(
+  "/avatar",
+  asyncHandler(async (req, res) => {
+    const userId = req.user!.sub;
+    const existing = await prisma.profile.findUnique({
+      where: { userId },
+      select: { assistantAvatarKey: true },
+    });
+    await prisma.profile.update({
+      where: { userId },
+      data: { assistantAvatarUrl: "", assistantAvatarKey: "" },
+    });
+    if (existing?.assistantAvatarKey) {
+      void deleteObject(existing.assistantAvatarKey).catch(() => {});
+    }
+    res.json({ assistantAvatarUrl: "" });
   }),
 );
 
@@ -318,7 +397,8 @@ router.patch(
       where: { id: userId },
       select: { email: true, fullName: true },
     });
-    res.json({ ...profile, email: user?.email, fullName: user?.fullName });
+    const { assistantAvatarKey: _key, ...safe } = profile;
+    res.json({ ...safe, email: user?.email, fullName: user?.fullName });
   }),
 );
 

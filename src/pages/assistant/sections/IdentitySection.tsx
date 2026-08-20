@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Play, Pause, Lock, Loader2, ChevronDown, Check, Globe } from "lucide-react";
+import { Play, Pause, Lock, Loader2, ChevronDown, Check, Globe, UsersRound, Volume2 } from "lucide-react";
 import { useAgentStore } from "@/stores/useAgentStore";
 import { useProfileStore } from "@/stores/useProfileStore";
 import { Input } from "@/components/ui/input";
@@ -295,7 +295,12 @@ export function IdentitySection() {
 
   return (
     <SectionShell meta={sectionByKey("identity")}>
-      <FieldGroup title="Basics" description="The name and business your assistant represents.">
+      <FieldGroup
+        title="Basics"
+        description="The name and business your assistant represents."
+        icon={<UsersRound />}
+        tone="brand"
+      >
         {/* FieldGroup renders children flush, so the rows carry their own rhythm. */}
         <div className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -408,6 +413,8 @@ export function IdentitySection() {
 
       <FieldGroup
         title="Voice Selection"
+        icon={<Volume2 />}
+        tone="voice"
         description={
           locked
             ? "Your assistant uses the default voice. Choosing a voice unlocks on a paid plan."
@@ -705,6 +712,8 @@ export function IdentitySection() {
 
       <FieldGroup
         title="Languages"
+        icon={<Globe />}
+        tone="language"
         description={
           multilingual === false
             ? "Your assistant answers in English. Multilingual answering unlocks on a plan that includes it."

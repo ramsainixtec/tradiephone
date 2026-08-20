@@ -22,12 +22,13 @@ import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 
-/** Per-voice accent colors, keyed by the LANDING_VOICES ElevenLabs voice_ids. */
+/** Per-voice accent colors, keyed by the LANDING_VOICES ElevenLabs voice_ids.
+ *  Warm-family hues so the four chips read as one orange system. */
 const VOICE_ACCENT: Record<string, string> = {
-  XrExE9yKIg1WjnnlVkGX: "#2C76ED", // Emma
-  FGY2WhTYpPnrIDTdsKH5: "#EC4899", // Olivia
-  IKne3meq5aSn9XLyUdCD: "#0EA5E9", // Jack
-  JBFqnCBsd6RMkjVDRZzb: "#7C5CFC", // James
+  XrExE9yKIg1WjnnlVkGX: "#EB7D00", // Emma — the brand amber itself
+  FGY2WhTYpPnrIDTdsKH5: "#C6415F", // Olivia — warm rose
+  IKne3meq5aSn9XLyUdCD: "#D9541C", // Jack — red-orange, clear of the brand amber
+  JBFqnCBsd6RMkjVDRZzb: "#8C5A1A", // James — deep bronze
 };
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -216,7 +217,7 @@ export default function LandingPage() {
                 <PhoneCall className="size-5" />
               </span>
               <span className="text-[17px]">
-                hello22<span className="text-primary">.ai</span>
+                Tradie<span className="text-primary">Call</span>
               </span>
             </BrandLogo>
           </Link>
@@ -246,26 +247,26 @@ export default function LandingPage() {
           fill="none"
         >
           <g className="lp-wave lp-wave-glow">
-            <path d="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" stroke="hsl(217 84% 55% / 0.30)" strokeWidth="2" pathLength="1" />
-            <path d="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" stroke="hsl(217 84% 55% / 0.30)" strokeWidth="2" pathLength="1" transform="translate(1440 0)" />
-            <circle r="4" fill="hsl(217 84% 55% / 0.55)">
+            <path d="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" stroke="hsl(20 92% 48% / 0.30)" strokeWidth="2" pathLength="1" />
+            <path d="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" stroke="hsl(20 92% 48% / 0.30)" strokeWidth="2" pathLength="1" transform="translate(1440 0)" />
+            <circle r="4" fill="hsl(20 92% 48% / 0.55)">
               <animateMotion dur="16s" repeatCount="indefinite" path="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" />
             </circle>
-            <circle r="2.5" fill="hsl(217 84% 55% / 0.4)">
+            <circle r="2.5" fill="hsl(20 92% 48% / 0.4)">
               <animateMotion dur="16s" begin="-8s" repeatCount="indefinite" path="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" />
             </circle>
           </g>
           <g className="lp-wave lp-wave-2">
-            <path d="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" stroke="hsl(217 84% 55% / 0.20)" strokeWidth="2" pathLength="1" />
-            <path d="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" stroke="hsl(217 84% 55% / 0.20)" strokeWidth="2" pathLength="1" transform="translate(1440 0)" />
-            <circle r="3" fill="hsl(217 84% 55% / 0.35)">
+            <path d="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" stroke="hsl(20 92% 48% / 0.20)" strokeWidth="2" pathLength="1" />
+            <path d="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" stroke="hsl(20 92% 48% / 0.20)" strokeWidth="2" pathLength="1" transform="translate(1440 0)" />
+            <circle r="3" fill="hsl(20 92% 48% / 0.35)">
               <animateMotion dur="22s" begin="-5s" repeatCount="indefinite" path="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" />
             </circle>
           </g>
           <g className="lp-wave lp-wave-3">
-            <path d="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" stroke="hsl(217 84% 55% / 0.13)" strokeWidth="1.5" pathLength="1" />
-            <path d="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" stroke="hsl(217 84% 55% / 0.13)" strokeWidth="1.5" pathLength="1" transform="translate(1440 0)" />
-            <circle r="2.5" fill="hsl(217 84% 55% / 0.3)">
+            <path d="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" stroke="hsl(20 92% 48% / 0.13)" strokeWidth="1.5" pathLength="1" />
+            <path d="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" stroke="hsl(20 92% 48% / 0.13)" strokeWidth="1.5" pathLength="1" transform="translate(1440 0)" />
+            <circle r="2.5" fill="hsl(20 92% 48% / 0.3)">
               <animateMotion dur="26s" begin="-13s" repeatCount="indefinite" path="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" />
             </circle>
           </g>
@@ -325,7 +326,7 @@ export default function LandingPage() {
                       )}
                       style={i === 0 && wordPrev === -1 ? { opacity: 1 } : undefined}
                     >
-                      <span className="animate-gradient bg-gradient-to-r from-primary via-[#22D3EE] to-[#7C5CFC] bg-clip-text text-transparent">
+                      <span className="text-primary">
                         {phrase}
                       </span>
                     </span>
@@ -453,7 +454,7 @@ export default function LandingPage() {
                 {LANDING_VOICES.map((v, i) => {
                   const selected = voiceId === v.id;
                   const playing = playingId === v.id;
-                  const accent = VOICE_ACCENT[v.id] ?? "#2C76ED";
+                  const accent = VOICE_ACCENT[v.id] ?? "#EB7D00";
                   return (
                     <button
                       key={v.id}

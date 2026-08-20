@@ -78,7 +78,7 @@ src/
 
 ## Design tokens
 
-Light theme, DM Sans, brand blue `#2C76ED`. All tokens live in
+Light theme, DM Sans, golden workwear amber `#EB7D00`. All tokens live in
 [`src/index.css`](src/index.css) under Tailwind v4 `@theme` and are used via semantic
 classes (`bg-primary`, `text-success`, `bg-warm`, `bg-premium-tint`, …).
 

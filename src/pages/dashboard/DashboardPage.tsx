@@ -1,13 +1,14 @@
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Activity,
+  ArrowRight,
   CheckCircle2,
   Clock,
   PhoneCall,
   RefreshCw,
-  ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   Timer,
   TrendingUp,
   UserCheck,
@@ -41,6 +42,8 @@ import { useAgentStore } from "@/stores/useAgentStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useProfileStore } from "@/stores/useProfileStore";
 import { useTrialStore } from "@/stores/useTrialStore";
+import { useBrandingStore } from "@/stores/useBrandingStore";
+import { avatarForVoice } from "@/data/voices";
 import { useLiveTick } from "@/hooks/useLiveData";
 import { LegendDot, MetricCard } from "./MetricCard";
 import {
@@ -247,6 +250,8 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const calls = useCallsStore((s) => s.calls);
   const assistantName = useAgentStore((s) => s.config.identity.assistantName);
+  const assistantVoiceId = useAgentStore((s) => s.config.identity.voiceId);
+  const brandAvatars = useBrandingStore((s) => s.assets);
   const tz = useAgentStore((s) => ianaTimeZone(s.config.rules.timezone));
   const user = useAuthStore((s) => s.user);
   const profile = useProfileStore((s) => s.profile);
@@ -547,50 +552,49 @@ export default function DashboardPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Hero summary banner */}
-      <div className="animate-rise relative mb-5 flex flex-wrap items-center justify-between gap-5 overflow-hidden rounded-[var(--radius-card)] bg-[linear-gradient(110deg,#1E63DD_0%,#2C76ED_50%,#5B93F2_100%)] p-6 text-white shadow-[var(--shadow-soft)]">
-        {/* soft floating glow accents */}
-        <span
-          aria-hidden
-          className="animate-glow pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-white/20 blur-3xl"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-24 left-1/3 size-56 rounded-full bg-white/10 blur-3xl"
-        />
+      {/* Hero summary banner — flat brand orange, no gradient. Everything on it
+          is a white alpha, so the slab stays on-theme automatically if the brand
+          token ever moves again. */}
+      <div className="animate-rise relative mb-5 overflow-hidden rounded-[var(--radius-card)] bg-primary shadow-[var(--shadow-soft)]">
+        <HeroFlourish />
 
-        <div className="relative flex min-w-0 items-center gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-sm">
-            {isAdmin ? <ShieldCheck className="size-6" /> : <Sparkles className="size-6" />}
-          </span>
-          <div className="min-w-0">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm">
-              {isAdmin ? "Admin Account" : `${assistantName} is live`}
-            </span>
-            <h2 className="mt-1.5 text-xl font-bold tracking-tight sm:text-2xl">
-              {t("dashboard.welcome", { name: firstName })}
-            </h2>
-            <p className="mt-1 text-sm text-white/80">
-              {isAdmin
-                ? `${a.callCount} calls · ${a.successRate}% success`
-                : `${a.successRate}% success rate`}
-            </p>
+        <div className="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-6 p-5 sm:p-6">
+          <div className="flex min-w-0 items-center gap-4">
+            <HeroAvatar src={avatarForVoice(assistantVoiceId, brandAvatars, profile.assistantAvatarUrl)} />
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-bold tracking-tight text-white sm:text-[1.4rem]">
+                {t("dashboard.welcome", { name: firstName })} <span aria-hidden>👋</span>
+              </h2>
+              <p className="mt-1 text-sm text-white/85">
+                {isAdmin
+                  ? "Your voice agent is ready to help your customers."
+                  : `${assistantName} is answering your calls.`}
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard/calls")}
+                className="mt-3.5 inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 focus-visible:focus-ring"
+              >
+                View Call Inbox <ArrowRight className="size-4" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="relative flex shrink-0 items-center gap-1 sm:gap-2">
-          <HeroStat label="Calls" value={String(a.callCount)} />
-          <span className="h-10 w-px bg-white/25" />
-          <HeroStat label="Success" value={`${a.successRate}%`} />
-          <span className="h-10 w-px bg-white/25" />
-          <HeroStat label="Leads" value={String(a.leadsCaptured)} />
+          <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-4 sm:gap-x-6">
+            <HeroStat icon={<PhoneCall />} label="Total Calls" value={String(a.callCount)} />
+            <span aria-hidden className="hidden h-11 w-px bg-white/30 sm:block" />
+            <HeroStat icon={<Activity />} label="Success Rate" value={`${a.successRate}%`} />
+            <span aria-hidden className="hidden h-11 w-px bg-white/30 sm:block" />
+            <HeroStat icon={<Users />} label="Leads Generated" value={String(a.leadsCaptured)} />
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {/* 1. Calling Minutes Used */}
         <MetricCard
-          accent="#2C76ED"
+          accent="#EB7D00"
+          chartSide
           index={0}
           title={t("dashboard.calling_minutes")}
           icon={<Clock />}
@@ -640,15 +644,15 @@ export default function DashboardPage() {
                 centerSub="calls"
               />
               <div className="flex-1">
-                <Sparkline values={hourSeries} height={40} />
+                <Sparkline values={hourSeries} color="#7C5CFC" height={40} />
               </div>
             </div>
           }
           footer={
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
               <LegendDot color={CHART_COLORS.success} label="Completed" value={completed} />
-              <LegendDot color={CHART_COLORS.danger} label="Missed" value={missed} />
               <LegendDot color={CHART_COLORS.warning} label="Voicemail" value={voicemail} />
+              <LegendDot color={CHART_COLORS.danger} label="Missed" value={missed} />
               <LegendDot color={CHART_COLORS.grey} label="Other" value={other} />
             </div>
           }
@@ -657,6 +661,7 @@ export default function DashboardPage() {
         {/* 3. Active Assistants */}
         <MetricCard
           accent="#06B6D4"
+          chartSide
           index={2}
           title={t("dashboard.active_assistants")}
           icon={<Users />}
@@ -721,6 +726,7 @@ export default function DashboardPage() {
         {/* 6. Success Rate + Leads captured */}
         <MetricCard
           accent="#10B981"
+          chartSide
           index={5}
           title={t("dashboard.success_rate")}
           icon={<CheckCircle2 />}
@@ -743,18 +749,182 @@ export default function DashboardPage() {
           }
         />
       </div>
+
+      <InsightsPanel
+        callCount={a.callCount}
+        successRate={a.successRate}
+        leads={a.leadsCaptured}
+        peakLabel={a.peakLabel}
+        avgDurationSec={a.avgDurationSec}
+        onSetup={() => navigate("/dashboard/assistant")}
+      />
     </div>
   );
 }
 
-/** Compact stat shown inside the hero banner. */
-function HeroStat({ label, value }: { label: string; value: string }) {
+/** Banner depth — two soft pools of light, nothing more.
+ *
+ *  This previously drew dashed "flight path" curves in a full-bleed SVG with
+ *  preserveAspectRatio="none". Because that stretched across the entire slab
+ *  regardless of where the content sat, the dashes ran straight through the
+ *  stat tiles and their dividers at most widths. Light has no edges to collide
+ *  with, so it reads as depth at every size instead. */
+function HeroFlourish() {
   return (
-    <div className="flex flex-col items-center justify-center px-3 text-center sm:px-5">
-      <span className="text-2xl font-bold leading-none tracking-tight">{value}</span>
-      <span className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-white/70">
-        {label}
+    <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <span className="absolute -right-24 -top-28 size-80 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.22),transparent)]" />
+      <span className="absolute -bottom-32 left-1/4 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.12),transparent)]" />
+    </span>
+  );
+}
+
+/** Greeting avatar — the assistant's configured photo.
+ *  Falls back to a tinted monogram tile if the photo 404s (the source may be a
+ *  remote URL, and a broken-image box in the first thing on the page is worse
+ *  than no photo at all). */
+function HeroAvatar({ src }: { src: string }) {
+  const [broken, setBroken] = useState(false);
+  useEffect(() => setBroken(false), [src]);
+
+  return (
+    <span className="relative inline-flex shrink-0">
+      {broken ? (
+        <span className="grid size-[4.25rem] place-items-center rounded-full bg-white/15 text-white ring-2 ring-white/70">
+          <Users className="size-7" />
+        </span>
+      ) : (
+        <img
+          src={src}
+          alt=""
+          onError={() => setBroken(true)}
+          className="size-[4.25rem] rounded-full object-cover ring-2 ring-white/70"
+        />
+      )}
+    </span>
+  );
+}
+
+/** Compact stat shown inside the hero banner — a translucent round icon tile,
+ *  the figure, and its label. Sits on the indigo slab, so every colour here is
+ *  a white alpha rather than a theme token. */
+function HeroStat({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 text-white [&_svg]:size-5">
+        {icon}
       </span>
+      <span className="leading-none">
+        <span className="block text-2xl font-bold tracking-tight text-white tabular-nums">
+          {value}
+        </span>
+        <span className="mt-1.5 block text-xs font-medium text-white/85">{label}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Spot illustration for the insights panel. Decorative only — the panel's
+ *  heading and copy carry the meaning — so it is empty-alt and hidden from the
+ *  a11y tree. Trimmed WebP with a real alpha channel, so it sits on the peach
+ *  tint without a plate behind it. */
+function InsightsArt() {
+  return (
+    <img
+      src="/images/insights-illustration.webp"
+      alt=""
+      aria-hidden
+      width={548}
+      height={468}
+      loading="lazy"
+      decoding="async"
+      className="h-[100px] w-auto select-none"
+    />
+  );
+}
+
+/** Insights & Suggestions — reads the period's own numbers. With no calls yet
+ *  it explains what to do next instead of showing an empty analysis, and points
+ *  at the setup flow that would produce the data. */
+function InsightsPanel({
+  callCount,
+  successRate,
+  leads,
+  peakLabel,
+  avgDurationSec,
+  onSetup,
+}: {
+  callCount: number;
+  successRate: number;
+  leads: number;
+  peakLabel: string;
+  avgDurationSec: number;
+  onSetup: () => void;
+}) {
+  const lines: string[] = [];
+  if (callCount > 0) {
+    if (peakLabel && peakLabel !== "—") {
+      lines.push(`Most calls land around ${peakLabel} — staff that window first.`);
+    }
+    lines.push(
+      successRate >= 80
+        ? `${successRate}% of calls are handled end to end. Your script is holding up.`
+        : `${successRate}% of calls complete end to end — review where callers drop off.`,
+    );
+    if (leads > 0) {
+      lines.push(`${leads} lead${leads === 1 ? "" : "s"} captured from ${callCount} calls.`);
+    }
+    if (avgDurationSec > 0) {
+      lines.push(`Calls average ${formatDuration(avgDurationSec)}.`);
+    }
+  }
+  const empty = lines.length === 0;
+
+  return (
+    <div className="animate-rise relative mt-4 overflow-hidden rounded-[var(--radius-card)] border border-primary/20 bg-card">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,var(--color-primary-tint)_0%,var(--color-primary-tint-soft)_60%,transparent_100%)]"
+      />
+      <div className="relative flex flex-wrap items-center gap-x-6 gap-y-4 p-4 sm:flex-nowrap sm:p-5">
+        <div className="hidden shrink-0 sm:block">
+          <InsightsArt />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-semibold tracking-tight">Insights &amp; Suggestions</h3>
+          {empty ? (
+            <p className="mt-1 max-w-[46ch] text-sm text-muted-foreground">
+              Set up your assistant, connect channels, and start receiving calls to see real
+              performance insights here.
+            </p>
+          ) : (
+            <ul className="mt-1.5 grid gap-1.5 text-sm text-muted-foreground">
+              {lines.map((l) => (
+                <li key={l} className="flex gap-2">
+                  <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                  <span>{l}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={onSetup}
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-primary/50 bg-card px-4 py-2.5 text-sm font-semibold text-[var(--color-primary-ink)] transition-colors hover:bg-primary-tint focus-visible:focus-ring"
+        >
+          {empty ? "Go to Setup" : "Open AI Brain"} <ArrowRight className="size-4" />
+        </button>
+      </div>
     </div>
   );
 }

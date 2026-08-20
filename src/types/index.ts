@@ -18,6 +18,9 @@ export interface Profile {
   address: string;
   country: string;
   industry: string;
+  /** Account's own AI-receptionist photo, set from Account Settings. Blank →
+   *  the platform branding avatar for the voice's gender, then a stock headshot. */
+  assistantAvatarUrl?: string;
   plan: PlanTier;
   /** Trial usage (free plan = 10 minutes). */
   testMinutesUsed: number;

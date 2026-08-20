@@ -1,10 +1,20 @@
 import { useState } from "react";
-import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import {
+  Briefcase,
+  Check,
+  CircleHelp,
+  Lightbulb,
+  Pencil,
+  Plus,
+  ClipboardList,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useAgentStore } from "@/stores/useAgentStore";
 import { Input, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SectionShell, FieldGroup } from "../SectionShell";
+import { SectionShell, FieldGroup, EmptyHint, toneButtonStyle } from "../SectionShell";
 import { sectionByKey } from "../sectionMeta";
 import { uid, cn } from "@/lib/utils";
 import type { CaptureField, FaqItem } from "@/types";
@@ -63,21 +73,20 @@ export function KnowledgeSection() {
     <SectionShell meta={sectionByKey("knowledge")}>
       <FieldGroup
         title="Services"
+        icon={<Briefcase />}
+        tone="service"
         description="The services your business offers — pulled from your website or onboarding. Edit them so your assistant describes them accurately."
         action={
-          <Button size="sm" variant="outline" onClick={addService}>
+          <Button size="sm" variant="outline" onClick={addService} style={toneButtonStyle("service")}>
             <Plus className="size-4" /> Add Service
           </Button>
         }
       >
         {services.length === 0 && (
-          <button
-            onClick={addService}
-            className="mb-1 w-full rounded-lg border border-dashed border-border bg-warm px-3 py-3 text-left text-xs text-muted-foreground hover:border-primary hover:text-primary"
-          >
+          <EmptyHint icon={<Lightbulb />} tone="service" onClick={addService}>
             No services yet — add what your business offers (e.g. <strong>concrete driveways</strong>,{" "}
             <strong>emergency plumbing</strong>) so your assistant knows what you do.
-          </button>
+          </EmptyHint>
         )}
         <div className="space-y-2">
           {services.map((s, i) => (
@@ -101,31 +110,36 @@ export function KnowledgeSection() {
 
       <FieldGroup
         title="Information to Capture"
+        icon={<ClipboardList />}
+        tone="capture"
         description="Details the assistant gathers naturally during the call."
         action={
-          <Button size="sm" variant="outline" onClick={addField}>
+          <Button size="sm" variant="outline" onClick={addField} style={toneButtonStyle("capture")}>
             <Plus className="size-4" /> Add
           </Button>
         }
       >
         {knowledge.captureFields.length === 0 && (
-          <button
-            onClick={addField}
-            className="mb-1 w-full rounded-lg border border-dashed border-border bg-warm px-3 py-3 text-left text-xs text-muted-foreground hover:border-primary hover:text-primary"
-          >
+          <EmptyHint icon={<ClipboardList />} tone="capture" onClick={addField}>
             Nothing captured yet — add details like <strong>name</strong>, <strong>phone</strong>, or{" "}
             <strong>reason for calling</strong> that the assistant should collect.
-          </button>
+          </EmptyHint>
         )}
         <ul className="space-y-2">
           {knowledge.captureFields.map((f) => (
             <li
               key={f.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2"
+              className="flex items-center gap-3 rounded-xl border border-border bg-background px-3.5 py-2.5"
             >
+              {/* Round + success-green when on: this row is a "we collect this"
+                  confirmation, not a form choice, so it reads as a status tick.
+                  Still a real checkbox — keyboard and screen-reader behaviour
+                  are unchanged, only the skin. */}
               <Checkbox
                 checked={f.enabled}
                 onCheckedChange={(c) => toggleField(f.id, c === true)}
+                aria-label={`Capture ${f.label}`}
+                className="size-6 rounded-full data-[state=checked]:border-success data-[state=checked]:bg-success data-[state=checked]:text-white"
               />
               {editingId === f.id ? (
                 <>
@@ -177,21 +191,20 @@ export function KnowledgeSection() {
 
       <FieldGroup
         title="FAQs"
+        icon={<CircleHelp />}
+        tone="faq"
         description="Question-and-answer pairs the assistant answers word-for-word — so it never guesses."
         action={
-          <Button size="sm" variant="outline" onClick={addFaq}>
+          <Button size="sm" variant="outline" onClick={addFaq} style={toneButtonStyle("faq")}>
             <Plus className="size-4" /> Add FAQ
           </Button>
         }
       >
         {faqs.length === 0 && (
-          <button
-            onClick={addFaq}
-            className="mb-1 w-full rounded-lg border border-dashed border-border bg-warm px-3 py-3 text-left text-xs text-muted-foreground hover:border-primary hover:text-primary"
-          >
+          <EmptyHint icon={<CircleHelp />} tone="faq" onClick={addFaq}>
             No FAQs yet — add common questions like <strong>"Do you offer free quotes?"</strong> or{" "}
             <strong>"Where are you located?"</strong> with the exact answer the assistant should give.
-          </button>
+          </EmptyHint>
         )}
         <div className="space-y-3">
           {faqs.map((f) => (

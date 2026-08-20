@@ -1,4 +1,4 @@
-import { PhoneOff, Volume2 } from "lucide-react";
+import { PhoneOff, SlidersHorizontal, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -58,7 +58,12 @@ export function VoiceBehaviourTuning() {
   const setAdv = (patch: Partial<typeof advanced>) => updateSection("advanced", patch);
 
   return (
-    <FieldGroup title="Voice & Behaviour Tuning" description="Fine-tune how the assistant responds.">
+    <FieldGroup
+      title="Voice & Behaviour Tuning"
+      description="Fine-tune how the assistant responds."
+      icon={<SlidersHorizontal />}
+      tone="tuning"
+    >
       <div className="space-y-6">
         <TuneSlider
           label="Creativity Level"

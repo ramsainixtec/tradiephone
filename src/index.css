@@ -6,9 +6,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ------------------------------------------------------------------ *
- *  hello22.ai — design tokens
- *  Theme: matched to the "agentAI" project — vivid orange, Inter,
- *  light cool surfaces. The whole UI keys off these semantic tokens.
+ *  Tradie Call — design tokens
+ *  Theme: golden workwear amber (#EB7D00), Inter, light cool surfaces.
+ *  The whole UI keys off these semantic tokens.
  * ------------------------------------------------------------------ */
 @theme {
   /* Breakpoint where the app chrome switches between mobile (top bar + bottom
@@ -28,11 +28,22 @@
   --color-warm: hsl(210 20% 99%); /* elevated panel tint */
   --color-card: hsl(0 0% 100%);
 
-  /* Brand — blue (#2C76ED) */
-  --color-primary: hsl(217 84% 55%);
+  /* Brand — #EB7D00, a golden workwear amber. Written in OKLCH so the tints
+     below can take a slash-alpha off the same value instead of drifting into a
+     separate hex. */
+  --color-primary: oklch(0.7 0.17 56.5);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-primary-tint: hsl(217 84% 55% / 0.12);
-  --color-primary-tint-soft: hsl(217 84% 55% / 0.06);
+  --color-primary-tint: oklch(0.7 0.17 56.5 / 0.12);
+  --color-primary-tint-soft: oklch(0.7 0.17 56.5 / 0.06);
+  /* Text-weight brand: a golden amber only reaches ~2.8:1 on white — too low
+     for text at any size, and under 3:1 even against large headings. Small
+     brand-coloured TEXT uses this deeper step (~6:1) instead; fills, borders
+     and glows keep --color-primary. */
+  --color-primary-ink: oklch(0.505 0.13 55);
+  /* Warm companions to the brand orange, for accents that need to sit beside
+     it without competing (badges, secondary chips). */
+  --color-amber: oklch(0.769 0.188 70.08);
+  --color-ember: oklch(0.54 0.16 40);
 
   /* Status colors */
   --color-success: hsl(135 59% 49%);
@@ -43,9 +54,13 @@
   --color-warning-tint: hsl(38 92% 50% / 0.14);
   --color-premium: hsl(38 92% 44%);
   --color-premium-tint: hsl(38 92% 50% / 0.16);
+  /* Leads — a rose accent that reads as "a person converted", deliberately not
+     --color-danger: a lead is good news and must not borrow the error colour. */
+  --color-lead: hsl(345 74% 52%);
+  --color-lead-tint: hsl(345 74% 52% / 0.12);
 
   /* Section accents for AI Brain numbered steps (step 1 = brand orange) */
-  --color-step-1: hsl(217 84% 55%); /* Identity — blue */
+  --color-step-1: oklch(0.7 0.17 56.5); /* Identity — brand orange */
   --color-step-2: hsl(255 80% 64%); /* Knowledge — violet */
   --color-step-3: hsl(135 59% 49%); /* Rules — green */
   --color-step-4: hsl(38 92% 50%); /* Automations — amber */
@@ -87,13 +102,18 @@
   --color-warm: hsl(222 18% 12%);
   --color-card: hsl(222 16% 14%);
 
-  --color-primary-tint: hsl(217 84% 55% / 0.18);
-  --color-primary-tint-soft: hsl(217 84% 55% / 0.08);
+  --color-primary-tint: oklch(0.7 0.17 56.5 / 0.18);
+  --color-primary-tint-soft: oklch(0.7 0.17 56.5 / 0.08);
+  /* On dark surfaces the deep ink would sink — brand text lightens instead. */
+  --color-primary-ink: oklch(0.81 0.145 62);
+  --color-ember: oklch(0.66 0.17 42);
 
   --color-success-tint: hsl(135 59% 49% / 0.18);
   --color-danger-tint: hsl(0 84% 60% / 0.15);
   --color-warning-tint: hsl(38 92% 50% / 0.18);
   --color-premium-tint: hsl(38 92% 50% / 0.2);
+  --color-lead: hsl(345 80% 66%);
+  --color-lead-tint: hsl(345 80% 66% / 0.18);
 
   /* Dark chart series — the SAME six hues re-stepped for the dark card surface,
      not an automatic flip. Validated against hsl(222 16% 14%); all six clear 3:1
@@ -293,13 +313,13 @@
    AI number). Runs forever until the action is done and the element is removed. */
 @keyframes attentionPulse {
   0% {
-    box-shadow: 0 0 0 0 hsl(217 84% 55% / 0.5);
+    box-shadow: 0 0 0 0 oklch(0.7 0.17 56.5 / 0.5);
   }
   70% {
-    box-shadow: 0 0 0 9px hsl(217 84% 55% / 0);
+    box-shadow: 0 0 0 9px oklch(0.7 0.17 56.5 / 0);
   }
   100% {
-    box-shadow: 0 0 0 0 hsl(217 84% 55% / 0);
+    box-shadow: 0 0 0 0 oklch(0.7 0.17 56.5 / 0);
   }
 }
 .animate-attention {
@@ -334,13 +354,13 @@
    (a scale bump rasterises the text on a GPU layer and blurs it). */
 @keyframes cardBeaconPulse {
   0% {
-    box-shadow: var(--shadow-panel), 0 0 0 0 hsl(217 84% 55% / 0.55);
+    box-shadow: var(--shadow-panel), 0 0 0 0 oklch(0.7 0.17 56.5 / 0.55);
   }
   70% {
-    box-shadow: var(--shadow-panel), 0 0 0 10px hsl(217 84% 55% / 0);
+    box-shadow: var(--shadow-panel), 0 0 0 10px oklch(0.7 0.17 56.5 / 0);
   }
   100% {
-    box-shadow: var(--shadow-panel), 0 0 0 0 hsl(217 84% 55% / 0);
+    box-shadow: var(--shadow-panel), 0 0 0 0 oklch(0.7 0.17 56.5 / 0);
   }
 }
 .animate-card-beacon {
@@ -417,7 +437,7 @@
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  background: hsl(145 70% 55% / 0.4);
+  background: oklch(0.7 0.17 56.5 / 0.4);
   pointer-events: none;
   animation: callWave 2.1s ease-out infinite;
 }
@@ -778,6 +798,106 @@
   }
 }
 
+/* ------------------------------------------------------------------ *
+ *  Sidebar navigation
+ *  One indicator element slides between items instead of each item
+ *  painting its own background. That means the active state animates
+ *  between rows for free, and only ONE element ever transitions —
+ *  no per-item colour crossfades fighting each other mid-move.
+ * ------------------------------------------------------------------ */
+.nav-indicator {
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+/* First paint must not slide in from y=0 — the indicator appears where the
+ * active row already is. This class is dropped one frame after mount. */
+.nav-indicator-instant {
+  transition: none;
+}
+
+/* The accent bar rides the indicator and stretches slightly as it travels,
+ * the way a physical marker would lag its own leading edge. */
+.nav-indicator-bar {
+  transition: height 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Rows arrive in sequence on mount. `backwards` keeps a delayed row hidden
+ * until its turn and leaves no residual transform to trap dropdowns. */
+@keyframes navItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.nav-item {
+  animation: navItemIn 400ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Icon micro-interaction: a small overshoot on hover, a settled lift when
+ * active. Transform only, so it never reflows the row. */
+.nav-item svg {
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.nav-item:hover svg {
+  transform: scale(1.14);
+}
+.nav-item[aria-current="page"] svg {
+  transform: scale(1.1);
+}
+
+/* Labels fade in behind the width transition when the rail expands, so text
+ * never appears before there is room for it. */
+@keyframes navLabelIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.nav-label {
+  animation: navLabelIn 260ms ease-out 120ms backwards;
+}
+
+/* Section rule that draws itself in rather than just appearing. */
+@keyframes navRuleIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.nav-rule {
+  transform-origin: left center;
+  animation: navRuleIn 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-indicator,
+  .nav-indicator-bar {
+    transition: none;
+  }
+  .nav-item,
+  .nav-label,
+  .nav-rule {
+    animation: none;
+  }
+  .nav-item svg,
+  .nav-item:hover svg,
+  .nav-item[aria-current="page"] svg {
+    transform: none;
+  }
+}
+
 /* Premium card surface: layered gradient + crisp hairline border */
 @utility card-glass {
   background-image: linear-gradient(
@@ -803,10 +923,10 @@
 }
 .lift:hover {
   transform: translateY(-3px);
-  box-shadow: 0 18px 40px -16px hsl(217 84% 40% / 0.28);
+  box-shadow: 0 18px 40px -16px oklch(0.55 0.14 56 / 0.28);
 }
 .dark .lift:hover {
-  box-shadow: 0 18px 40px -16px hsl(217 84% 20% / 0.5);
+  box-shadow: 0 18px 40px -16px oklch(0.37 0.1 56 / 0.5);
 }
 
 /* ------------------------------------------------------------------ *
@@ -866,7 +986,7 @@
 
 /* Soft light under the primary wave — the line reads as lit, not printed. */
 .lp-wave-glow {
-  filter: drop-shadow(0 0 7px hsl(217 84% 55% / 0.3));
+  filter: drop-shadow(0 0 7px oklch(0.7 0.17 56.5 / 0.3));
 }
 
 /* While a voice sample is playing, the whole wave field "breathes" — a
@@ -911,8 +1031,8 @@
 .lp-spot {
   background: radial-gradient(
     closest-side,
-    hsl(217 84% 55% / 0.1),
-    hsl(217 84% 55% / 0.045) 45%,
+    oklch(0.7 0.17 56.5 / 0.1),
+    oklch(0.7 0.17 56.5 / 0.045) 45%,
     transparent 72%
   );
   transition-property: transform, filter;
@@ -920,8 +1040,8 @@
 .dark .lp-spot {
   background: radial-gradient(
     closest-side,
-    hsl(217 84% 55% / 0.16),
-    hsl(217 84% 55% / 0.07) 45%,
+    oklch(0.7 0.17 56.5 / 0.16),
+    oklch(0.7 0.17 56.5 / 0.07) 45%,
     transparent 72%
   );
 }
@@ -937,7 +1057,7 @@
   inset: -2rem;
   border-radius: 3rem;
   pointer-events: none;
-  background: radial-gradient(55% 55% at 50% 32%, hsl(217 84% 55% / 0.1), transparent 72%);
+  background: radial-gradient(55% 55% at 50% 32%, oklch(0.7 0.17 56.5 / 0.1), transparent 72%);
   filter: blur(24px);
 }
 .dark .lp-stage-halo {
@@ -975,21 +1095,6 @@
 }
 .lp-dot {
   animation: lpDot 1.2s ease-in-out infinite;
-}
-
-/* Slow pan for the gradient headline */
-@keyframes gradientPan {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradientPan 6s ease-in-out infinite;
 }
 
 /* Voice sample equalizer bars */
@@ -1030,17 +1135,13 @@
   transform-origin: 50% 85%;
   animation: hwWordIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
-/* Gradient payoff phrase — animated as ONE unit so the brand gradient and
- * its 6s pan stay continuous across both words (splitting per word makes the
- * colors mismatch at the seam). Gradient colors come from the Tailwind
- * bg-clip utilities on the element; only size/motion live here. */
+/* Payoff phrase — animated as ONE unit so both words reveal together rather
+ * than seaming apart mid-phrase. Flat brand colour, so the entrance is the
+ * only animation it carries. */
 .hw-payoff {
   --hw-y: 0.65em;
   --hw-blur: 14px;
-  background-size: 200% 200%;
-  animation:
-    hwWordIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) backwards,
-    gradientPan 6s ease-in-out infinite;
+  animation: hwWordIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 /* Hero headline — rotating tail phrase (slide + blur crossfade).
@@ -1108,9 +1209,6 @@
   .lp-dot,
   .eq-bar {
     animation: none;
-  }
-  .hw-payoff {
-    background-position: 35% 50%;
   }
   .word-cycle-item {
     animation: none !important;

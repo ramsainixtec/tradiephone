@@ -215,13 +215,20 @@ export const DEFAULT_AVATAR_BY_GENDER: Record<"male" | "female", string> = {
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&facepad=3&w=256&h=256&q=80",
 };
 
-/** Photo URL for the onboarding receptionist avatar, chosen by the voice's
- *  gender. Prefers the admin-configured branding image (avatarFemale/avatarMale
- *  from the branding store), falling back to the built-in stock headshot. */
+/** Photo URL for the AI-receptionist avatar, in priority order:
+ *
+ *   1. `accountAvatar` — this account's own upload (Account Settings). Wins
+ *      outright: it is the most specific choice anyone made, and it is not
+ *      gendered, so the voice never overrides a photo the owner picked.
+ *   2. The admin-configured platform branding image for the voice's gender.
+ *   3. The built-in stock headshot.
+ */
 export function avatarForVoice(
   voiceId: string,
   overrides?: { avatarFemale?: string; avatarMale?: string },
+  accountAvatar?: string,
 ): string {
+  if (accountAvatar?.trim()) return accountAvatar.trim();
   const gender = voiceGenderFor(voiceId);
   const override = gender === "male" ? overrides?.avatarMale : overrides?.avatarFemale;
   return override?.trim() || DEFAULT_AVATAR_BY_GENDER[gender];

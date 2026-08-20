@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Inbox,
@@ -142,6 +143,119 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/dashboard/admin/settings", label: "Settings", icon: Settings, adminOnly: true },
 ];
 
+/** Tracks the active row inside a nav group and reports its box, so a single
+ *  indicator element can slide to it. Measured from the DOM rather than derived
+ *  from the route because row height varies (and the rail collapses), and a
+ *  hardcoded row height silently desyncs the moment padding changes.
+ *
+ *  Returns `instant` for the first measurement: on mount the indicator must
+ *  APPEAR at the active row, not slide down to it from the top of the list. */
+function useActiveIndicator(collapsed: boolean) {
+  const ref = useRef<HTMLElement | null>(null);
+  const [box, setBox] = useState<{ top: number; height: number } | null>(null);
+  const [instant, setInstant] = useState(true);
+  const { pathname } = useLocation();
+
+  useLayoutEffect(() => {
+    // NavLink stamps aria-current="page" on the active row — no separate
+    // matching logic to keep in sync with the router's own.
+    const el = ref.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    setBox(el ? { top: el.offsetTop, height: el.offsetHeight } : null);
+  }, [pathname, collapsed]);
+
+  // Release the no-transition guard one frame after the first placement.
+  useEffect(() => {
+    if (!instant || !box) return;
+    const id = requestAnimationFrame(() => setInstant(false));
+    return () => cancelAnimationFrame(id);
+  }, [instant, box]);
+
+  return { ref, box, instant };
+}
+
+interface NavGroupProps {
+  items: NavItem[];
+  isCollapsed: boolean;
+  isMobile: boolean;
+  onNavigate?: () => void;
+  /** Rendered above the group (section header / divider). */
+  heading?: ReactNode;
+  /** Extra trailing content per item, e.g. the premium crown. */
+  trailing?: (item: NavItem) => ReactNode;
+  /** Offset for the entrance stagger so a second group continues the sequence. */
+  stagger?: number;
+  className?: string;
+}
+
+/** A nav section with one travelling active indicator behind its rows. */
+function NavGroup({
+  items,
+  isCollapsed,
+  isMobile,
+  onNavigate,
+  heading,
+  trailing,
+  stagger = 0,
+  className,
+}: NavGroupProps) {
+  const { ref, box, instant } = useActiveIndicator(isCollapsed);
+
+  return (
+    <nav ref={ref} className={cn("relative flex flex-col gap-1 px-3", className)}>
+      {heading}
+
+      {/* The moving highlight. Sits behind the rows (rows are relative), spans
+          the same inset as the list padding, and is the only element that
+          animates when the route changes. */}
+      <span
+        aria-hidden
+        className={cn(
+          "nav-indicator pointer-events-none absolute inset-x-3 rounded-lg bg-primary-tint",
+          instant && "nav-indicator-instant",
+          box ? "opacity-100" : "opacity-0",
+        )}
+        style={box ? { transform: `translateY(${box.top}px)`, height: box.height } : undefined}
+      >
+        <span
+          className={cn(
+            "nav-indicator-bar absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-r-full bg-primary",
+            isCollapsed ? "h-4" : "h-5",
+          )}
+        />
+      </span>
+
+      {items.map((item, i) => {
+        const { to, label, icon: Icon, end, tourKey, hidden } = item;
+        return (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              cn(
+                "nav-item relative z-10 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "text-[var(--color-primary-ink)]"
+                  : "text-foreground/70 hover:bg-muted/70 hover:text-foreground",
+                isCollapsed && "justify-center px-0",
+                hidden && "hidden",
+              )
+            }
+            style={{ animationDelay: `${stagger + i * 35}ms` }}
+            title={isCollapsed ? label : undefined}
+            onClick={isMobile ? onNavigate : undefined}
+            {...(tourKey ? { "data-tour": tourKey } : {})}
+          >
+            <Icon className="size-[18px] shrink-0" />
+            {!isCollapsed && <span className="nav-label">{label}</span>}
+            {!isCollapsed && trailing?.(item)}
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function Sidebar() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
@@ -181,15 +295,6 @@ export function Sidebar() {
     navigate("/login");
   };
 
-  const navItemClass = (collapsed: boolean) => ({ isActive }: { isActive: boolean }) =>
-    cn(
-      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-      isActive
-        ? "bg-primary-tint text-primary"
-        : "text-foreground/70 hover:bg-muted hover:text-foreground",
-      collapsed && "justify-center px-0",
-    );
-
   const minutesUsed = profile.webTestMinutesUsed;
   const hasEntitlement = trial?.phase === "trial" || trial?.phase === "active";
 
@@ -212,7 +317,7 @@ export function Sidebar() {
                   <PhoneCall className="size-5" />
                 </div>
                 <span className="truncate text-[15px] font-semibold leading-tight">
-                  hello22<span className="text-primary">.ai</span>
+                  Tradie<span className="text-primary">Call</span>
                 </span>
               </BrandLogo>
             </NavLink>
@@ -224,7 +329,11 @@ export function Sidebar() {
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button onClick={toggleSidebar} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted" aria-label="Toggle sidebar">
+                <button
+                  onClick={toggleSidebar}
+                  className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Toggle sidebar"
+                >
                   {isCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
                 </button>
               </TooltipTrigger>
@@ -277,39 +386,32 @@ export function Sidebar() {
 
         {/* Scrollable region: nav + Call Assistant flow together (top-aligned, no floating gap) */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-2">
-          <nav className="flex flex-col gap-1 px-3">
-            {/* STAFF are admin-team members with no customer profile, so the
-                customer modules (Dashboard, Call Inbox, AI Brain, CRM) don't
-                apply to them — show nothing here; they get the Admin nav below.
-                ADMIN keeps these (minus Plans & Billing); USER sees all. */}
-            {(isStaff
-              ? []
-              : NAV.filter(
-                  (item) =>
-                    // Admins keep Call Forwarding + Call Transfer in their user
-                    // nav (they have a real profile); only Plans & Billing is hidden.
-                    !(isAdmin && item.to === "/dashboard/plans") &&
-                    // On mobile these live in the bottom app bar, so drop them here.
-                    !(isMobile && BOTTOM_NAV_ROUTES.has(item.to)),
-                )
-            ).map(({ to, label, icon: Icon, end, tourKey, premiumWhenLocked }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={navItemClass(isCollapsed)}
-                title={isCollapsed ? label : undefined}
-                onClick={isMobile ? () => setMobileSidebarOpen(false) : undefined}
-                {...(tourKey ? { "data-tour": tourKey } : {})}
-              >
-                <Icon className="size-[18px] shrink-0" />
-                {!isCollapsed && <span>{label}</span>}
-                {premiumWhenLocked && !smsToCallerIncluded && !isCollapsed && (
-                  <Crown className="ml-auto size-4 shrink-0 text-premium" aria-label="Premium feature" />
-                )}
-              </NavLink>
-            ))}
-          </nav>
+          {/* STAFF are admin-team members with no customer profile, so the
+              customer modules (Dashboard, Call Inbox, AI Brain, CRM) don't
+              apply to them — show nothing here; they get the Admin nav below.
+              ADMIN keeps these (minus Plans & Billing); USER sees all. */}
+          <NavGroup
+            items={
+              isStaff
+                ? []
+                : NAV.filter(
+                    (item) =>
+                      // Admins keep Call Forwarding + Call Transfer in their user
+                      // nav (they have a real profile); only Plans & Billing is hidden.
+                      !(isAdmin && item.to === "/dashboard/plans") &&
+                      // On mobile these live in the bottom app bar, so drop them here.
+                      !(isMobile && BOTTOM_NAV_ROUTES.has(item.to)),
+                  )
+            }
+            isCollapsed={isCollapsed}
+            isMobile={isMobile}
+            onNavigate={() => setMobileSidebarOpen(false)}
+            trailing={(item) =>
+              item.premiumWhenLocked && !smsToCallerIncluded ? (
+                <Crown className="ml-auto size-4 shrink-0 text-premium" aria-label="Premium feature" />
+              ) : null
+            }
+          />
 
           {isAdminOrStaff && (() => {
             const visibleAdminItems = ADMIN_NAV.filter((item) => {
@@ -319,27 +421,23 @@ export function Sidebar() {
             });
             if (visibleAdminItems.length === 0) return null;
             return (
-            <nav className="mt-2 flex flex-col gap-1 px-3">
-              {!isCollapsed ? (
-                <div className="flex items-center gap-1.5 px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  <ShieldCheck className="size-3.5 text-primary" /> {adminSectionLabel}
-                </div>
-              ) : (
-                <div className="mx-auto my-1 h-px w-6 bg-border" />
-              )}
-              {visibleAdminItems.map(({ to, label, icon: Icon, hidden }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  className={(state) => cn(navItemClass(isCollapsed)(state), hidden && "hidden")}
-                  title={isCollapsed ? label : undefined}
-                  onClick={isMobile ? () => setMobileSidebarOpen(false) : undefined}
-                >
-                  <Icon className="size-[18px] shrink-0" />
-                  {!isCollapsed && <span>{label}</span>}
-                </NavLink>
-              ))}
-            </nav>
+            <NavGroup
+              className="mt-2"
+              items={visibleAdminItems}
+              isCollapsed={isCollapsed}
+              isMobile={isMobile}
+              onNavigate={() => setMobileSidebarOpen(false)}
+              stagger={280}
+              heading={
+                !isCollapsed ? (
+                  <div className="flex items-center gap-1.5 px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <ShieldCheck className="size-3.5 text-primary" /> {adminSectionLabel}
+                  </div>
+                ) : (
+                  <div className="nav-rule mx-auto my-1 h-px w-6 bg-border" />
+                )
+              }
+            />
             );
           })()}
 
@@ -372,7 +470,7 @@ export function Sidebar() {
                     const qs = useQuickSetupStore.getState();
                     qs.openSetup(); // opens at the Plan step (step 1)
                   }}
-                  className="mx-3 mt-3 block w-[calc(100%-1.5rem)] animate-card-beacon overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#1d4ed8] p-3.5 text-left text-white shadow-[var(--shadow-panel)] transition-transform hover:scale-[1.02] motion-reduce:animate-none"
+                  className="mx-3 mt-3 block w-[calc(100%-1.5rem)] animate-card-beacon overflow-hidden rounded-2xl bg-primary p-3.5 text-left text-white shadow-[var(--shadow-panel)] transition-transform hover:scale-[1.02] motion-reduce:animate-none"
                 >
                   <div className="flex items-center gap-2">
                     <span className="relative flex size-7 shrink-0 items-center justify-center rounded-full bg-danger shadow-lg shadow-danger/40">
@@ -431,7 +529,7 @@ export function Sidebar() {
             <Button
               variant="outline"
               className={cn(
-                "w-full justify-center gap-2 border-primary/40 bg-primary-tint font-semibold text-primary shadow-(--shadow-soft) hover:bg-primary hover:text-primary-foreground",
+                "w-full justify-center gap-2 border-primary/40 bg-primary-tint font-semibold text-[var(--color-primary-ink)] shadow-(--shadow-soft) transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary hover:text-primary-foreground hover:shadow-md motion-reduce:hover:translate-y-0",
                 isCollapsed && "px-0",
               )}
               onClick={() => setTester(true)}
@@ -464,7 +562,7 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden border-r border-border bg-warm transition-[width] duration-200 nav:flex",
+          "sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden border-r border-border bg-warm transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav:flex",
           collapsed ? "w-[72px]" : "w-64",
         )}
       >

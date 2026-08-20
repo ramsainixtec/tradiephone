@@ -6,10 +6,15 @@ import {
   Crown,
   ExternalLink,
   FileText,
+  ImageUp,
+  Loader2,
   Mail,
   PhoneCall,
+  Settings2,
   Sparkles,
   Timer,
+  Trash2,
+  UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -35,6 +40,9 @@ import { FREE_PLAN_MINUTES, useProfileStore } from "@/stores/useProfileStore";
 import { useTrialStore } from "@/stores/useTrialStore";
 import { useCallsStore } from "@/stores/useCallsStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useAgentStore } from "@/stores/useAgentStore";
+import { useBrandingStore } from "@/stores/useBrandingStore";
+import { avatarForVoice } from "@/data/voices";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { phoneError } from "@/data/countries";
 import { SettingsRow } from "./SettingsRow";
@@ -101,6 +109,10 @@ export default function SettingsPage() {
           />
         )}
 
+        {/* The account's own receptionist photo. Staff have no assistant, so
+            they never see this card. */}
+        {!isStaff && <AssistantAvatarCard className="lg:col-span-2" isAdmin={isAdmin} />}
+
         <PasswordCard className="lg:col-span-2" />
 
         {!isAdmin && !isStaff && <UsageCard className="h-full" calls={calls} />}
@@ -116,6 +128,148 @@ export default function SettingsPage() {
         <SupportCard className="lg:col-span-2" />
       </div>
     </div>
+  );
+}
+
+/* ================================================================== */
+/*  1b. Assistant avatar                                               */
+/* ================================================================== */
+
+/** Upload the photo callers' AI receptionist wears across the app. Uploads go
+ *  straight to POST /api/profile/avatar; clearing it falls back through the
+ *  platform branding avatar to the built-in stock headshot, which is why the
+ *  preview always has something to show. */
+function AssistantAvatarCard({ className, isAdmin }: { className?: string; isAdmin: boolean }) {
+  const navigate = useNavigate();
+  const avatarUrl = useProfileStore((s) => s.profile.assistantAvatarUrl);
+  const setAssistantAvatar = useProfileStore((s) => s.setAssistantAvatar);
+  const assistantName = useAgentStore((s) => s.config.identity.assistantName);
+  const voiceId = useAgentStore((s) => s.config.identity.voiceId);
+  const brandAvatars = useBrandingStore((s) => s.assets);
+  const [busy, setBusy] = useState<"upload" | "remove" | null>(null);
+  const [broken, setBroken] = useState(false);
+
+  const shown = avatarForVoice(voiceId, brandAvatars, avatarUrl);
+  const usingOwn = Boolean(avatarUrl?.trim());
+  useEffect(() => setBroken(false), [shown]);
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Clear the input first: picking the SAME file twice must re-fire change,
+    // which it won't if the value is still set.
+    e.target.value = "";
+    if (!file) return;
+    setBusy("upload");
+    try {
+      const { assistantAvatarUrl } = await api.profile.uploadAvatar(file);
+      setAssistantAvatar(assistantAvatarUrl);
+      toast.success("Photo updated");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't upload that photo");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onRemove() {
+    setBusy("remove");
+    try {
+      await api.profile.removeAvatar();
+      setAssistantAvatar("");
+      toast.success("Photo removed");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't remove that photo");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Assistant Photo</CardTitle>
+        <CardDescription>
+          The photo shown for {assistantName || "your assistant"} on your dashboard and during
+          onboarding.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-center gap-5">
+        <span className="relative inline-flex shrink-0">
+          {broken ? (
+            <span className="grid size-20 place-items-center rounded-full bg-primary-tint text-[var(--color-primary-ink)]">
+              <UserRound className="size-8" />
+            </span>
+          ) : (
+            <img
+              src={shown}
+              alt=""
+              onError={() => setBroken(true)}
+              className="size-20 rounded-full object-cover ring-2 ring-border"
+            />
+          )}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <label
+              className={cn(
+                "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted",
+                busy && "pointer-events-none opacity-60",
+              )}
+            >
+              {busy === "upload" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ImageUp className="size-4" />
+              )}
+              {usingOwn ? "Replace photo" : "Upload photo"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                onChange={(e) => void onPick(e)}
+                disabled={Boolean(busy)}
+              />
+            </label>
+
+            {usingOwn && (
+              <Button
+                variant="outline"
+                onClick={() => void onRemove()}
+                disabled={Boolean(busy)}
+                className="text-danger hover:bg-danger-tint"
+              >
+                {busy === "remove" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+                Remove
+              </Button>
+            )}
+          </div>
+
+          <p className="mt-2.5 text-xs text-muted-foreground">
+            PNG, JPEG or WebP, up to 4&nbsp;MB. Square images work best.
+            {!usingOwn && " Right now it's using the default photo."}
+          </p>
+
+          {/* Admins own the platform-wide fallback too — the photo every account
+              gets before it uploads one. Point them at it rather than leaving
+              them to hunt through the admin area. */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/admin/settings")}
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-primary-ink)] hover:underline"
+            >
+              <Settings2 className="size-3.5" />
+              Set the platform-wide default in Admin → Settings → Branding
+            </button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

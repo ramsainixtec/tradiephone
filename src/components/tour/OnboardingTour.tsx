@@ -205,7 +205,7 @@ export function OnboardingTour() {
   );
 }
 
-const CONFETTI_COLORS = ["#2C76ED", "#10B981", "#F59E0B", "#7C5CFC", "#EF4444", "#06B6D4"];
+const CONFETTI_COLORS = ["#EB7D00", "#10B981", "#F59E0B", "#7C5CFC", "#EF4444", "#06B6D4"];
 
 /** Brief celebratory overlay shown when the tour is finished. */
 function CelebrationOverlay() {
