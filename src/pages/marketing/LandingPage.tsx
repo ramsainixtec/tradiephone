@@ -1,141 +1,190 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Check,
-  Globe,
-  Info,
-  Loader2,
-  LogIn,
+  ArrowRight,
+  Calendar,
+  Clock,
+  DollarSign,
+  Filter,
+  Frown,
+  Phone,
   PhoneCall,
+  Play,
   Sparkles,
-  Volume2,
+  TrendingDown,
+  TrendingUp,
+  UserRound,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/branding/BrandLogo";
 import { HowItWorksDialog } from "@/components/marketing/HowItWorksDialog";
-import { QuickControls } from "@/components/layout/QuickControls";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
-import { LANDING_VOICES, providerForVoiceId } from "@/data/voices";
-import { speak, stopSpeaking } from "@/lib/speech";
-import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
-import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-/** Per-voice accent colors, keyed by the LANDING_VOICES ElevenLabs voice_ids. */
-const VOICE_ACCENT: Record<string, string> = {
-  XrExE9yKIg1WjnnlVkGX: "#2C76ED", // Emma
-  FGY2WhTYpPnrIDTdsKH5: "#EC4899", // Olivia
-  IKne3meq5aSn9XLyUdCD: "#0EA5E9", // Jack
-  JBFqnCBsd6RMkjVDRZzb: "#7C5CFC", // James
-};
+/* -------------------------------------------------------------------------- *
+ *  "Same call. Better outcome." — a split comparison hero.
+ *
+ *  Left tells the cost of a missed call, right shows the same call handled by
+ *  the AI receptionist, and the middle column carries the pitch and the CTA.
+ *
+ *  Geometry note: from `lg` up this renders at a fixed 1445px design width and
+ *  `.lp-page` (index.css) scales the whole page with `zoom`, so the pinned
+ *  offsets below — chip stacks, handwritten notes, avatars hanging off the
+ *  phone frames — hold their exact relationships at every desktop size. Below
+ *  `lg` the same pieces unstack into a normal responsive column.
+ * -------------------------------------------------------------------------- */
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+/** Staggered entrance — pairs with the shared .lp-in keyframes. */
+const rise = (ms: number): CSSProperties => ({ animationDelay: `${ms}ms` });
 
-const PLACEHOLDER_HOSTS = new Set([
-  "example.com", "example.org", "example.net", "test.com", "test.org",
-  "yourwebsite.com", "website.com", "mywebsite.com", "domain.com", "site.com",
-  "localhost",
-]);
+/* ----------------------------- shared pieces ----------------------------- */
 
-/** True only for a well-formed public domain (rejects plain text and obvious placeholders). */
-function isValidWebsite(raw: string): boolean {
-  const v = raw.trim();
-  if (!v || /\s/.test(v)) return false;
-  let host: string;
-  try {
-    host = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`).hostname;
-  } catch {
-    return false;
-  }
-  if (!/^([a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(host)) return false;
-  return !PLACEHOLDER_HOSTS.has(host.toLowerCase().replace(/^www\./, ""));
+/** Rounded phone body. Children render on the white "screen"; the screen does
+ *  not clip, so chat avatars can hang off the bezel the way the design shows. */
+function PhoneShell({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "relative h-[460px] w-[250px] shrink-0 rounded-[44px] border border-[#EDEFF3]",
+        "bg-gradient-to-b from-white to-[#F5F6F9] p-[13px]",
+        "shadow-[0_2px_4px_rgba(15,23,42,0.03),0_28px_60px_-28px_rgba(15,23,42,0.28)]",
+        className,
+      )}
+    >
+      <div className="relative h-full w-full rounded-[32px] bg-white">{children}</div>
+    </div>
+  );
 }
 
-/** Staggered entrance — pairs with the shared .animate-rise keyframes. */
-const rise = (ms: number) => ({ animationDelay: `${ms}ms` });
-
-/** Headline lead words for the Focus Cascade reveal; the gradient payoff
- *  phrase animates separately as a single unit. */
-const HEADLINE_WORDS: ReadonlyArray<{ text: string; delay: number }> = [
-  { text: "Turn", delay: 90 },
-  { text: "missed", delay: 160 },
-  { text: "calls", delay: 230 },
-  { text: "into", delay: 300 },
-];
-
-/** Phrases the gradient tail of the headline cycles through. Keep the first
- *  entry as the canonical copy — it's what screen readers announce and what
- *  prefers-reduced-motion users see. */
-const HERO_PHRASES = [
-  "instant revenue.",
-  "captured leads.",
-  "happy customers.",
-];
-
-/** Cycles `index` through [0, count) every `holdMs`, exposing the previous
- *  index so the outgoing phrase can animate away. Never starts under
- *  prefers-reduced-motion and pauses while the tab is hidden. */
-function useWordCycle(count: number, holdMs = 3400) {
-  const [cycle, setCycle] = useState({ index: 0, prev: -1 });
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = window.setInterval(() => {
-      if (document.hidden) return; // don't churn in background tabs
-      setCycle((c) => ({ index: (c.index + 1) % count, prev: c.index }));
-    }, holdMs);
-    return () => window.clearInterval(id);
-  }, [count, holdMs]);
-  return cycle;
+/** The small uppercase eyebrow above each comparison headline. */
+function Eyebrow({ tone, children }: { tone: "loss" | "win"; children: ReactNode }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-[24px] items-center rounded-full px-[11px] text-[10.5px] font-bold uppercase tracking-[0.09em]",
+        tone === "loss" ? "bg-[#FDE7E7] text-[#E5484D]" : "bg-[#DCFCE7] text-[#16A34A]",
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
-/** Trust line under the form — reassurance only, not a content section. */
-const TRUST_ITEMS = ["Live in minutes", "Cancel anytime"];
+/** Outcome chip — the red "what you lost" and green "what you gained" cards
+ *  floating either side of the phones. */
+function OutcomeChip({
+  tone,
+  icon: Icon,
+  label,
+  delay,
+}: {
+  tone: "loss" | "win";
+  icon: typeof Frown;
+  label: string;
+  delay: number;
+}) {
+  return (
+    <div
+      className={cn(
+        "lp-float flex h-[72px] items-center gap-3 rounded-2xl border px-4",
+        tone === "loss" ? "border-[#FADCDC] bg-[#FDF2F2]" : "border-[#D3F3DF] bg-[#F1FBF5]",
+      )}
+      style={{ "--lp-delay": `${delay}ms` } as CSSProperties}
+    >
+      <Icon
+        className={cn("size-[18px] shrink-0", tone === "loss" ? "text-[#E5484D]" : "text-[#22A45D]")}
+        strokeWidth={1.9}
+      />
+      <span className="text-[12.5px] font-medium leading-[1.32] text-[#3C4657]">{label}</span>
+    </div>
+  );
+}
+
+/** Chat avatar that sits just outside the phone bezel. */
+function ChatAvatar({ kind }: { kind: "caller" | "ai" }) {
+  return (
+    <span
+      className={cn(
+        "grid size-[28px] place-items-center rounded-full border shadow-[0_2px_6px_rgba(15,23,42,0.06)]",
+        kind === "caller" ? "border-[#EDEFF3] bg-[#F4F5F7]" : "border-[#FBDDC2] bg-white",
+      )}
+    >
+      {kind === "caller" ? (
+        <UserRound className="size-[14px] text-[#98A1AE]" strokeWidth={2} />
+      ) : (
+        <Sparkles className="size-[13px] text-[#F97316]" strokeWidth={2} />
+      )}
+    </span>
+  );
+}
+
+/* ------------------------------- page data ------------------------------- */
+
+const LOSS_CHIPS = [
+  { icon: Frown, label: "Goes to voicemail" },
+  { icon: DollarSign, label: "Lost lead" },
+  { icon: TrendingDown, label: "Revenue lost" },
+] as const;
+
+const WIN_CHIPS = [
+  { icon: UserRound, label: "Lead captured" },
+  { icon: Calendar, label: "Job booked" },
+  { icon: TrendingUp, label: "Business grows" },
+] as const;
+
+/** Live-call waveform. Fixed, so the silhouette is part of the design rather
+ *  than a different picture on every render. */
+const WAVE = [
+  0.18, 0.32, 0.5, 0.28, 0.62, 0.42, 0.78, 0.55, 0.9, 0.66, 0.44, 0.82, 0.6, 0.95, 0.7, 0.5, 0.86,
+  0.62, 0.98, 0.74, 0.52, 0.9, 0.66, 0.46, 0.8, 0.58, 0.92, 0.68, 0.5, 0.84, 0.6, 0.44, 0.76, 0.54,
+  0.88, 0.62, 0.4, 0.7, 0.5, 0.34, 0.58, 0.42, 0.26, 0.44, 0.3, 0.18,
+];
+
+const FEATURES = [
+  {
+    icon: Clock,
+    title: "24/7 Always On",
+    body: "Never miss a call again",
+    ring: "bg-[#DCFCE7] text-[#16A34A]",
+  },
+  {
+    icon: Filter,
+    title: "Qualifies Leads",
+    body: "Asks the right questions",
+    ring: "bg-[#EDE9FE] text-[#7C3AED]",
+  },
+  {
+    icon: Calendar,
+    title: "Books Appointments",
+    body: "Straight to your calendar",
+    ring: "bg-[#E0F2FE] text-[#0EA5E9]",
+  },
+  {
+    icon: TrendingUp,
+    title: "Grows Your Business",
+    body: "More jobs. Less missed calls.",
+    ring: "bg-[#FFEDD5] text-[#F97316]",
+  },
+] as const;
+
+/* ------------------------------- the page -------------------------------- */
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const setUrl = useOnboardingStore((s) => s.setUrl);
   const reset = useOnboardingStore((s) => s.reset);
   const skipWebsite = useOnboardingStore((s) => s.skipWebsite);
   const voiceId = useOnboardingStore((s) => s.voiceId);
   const setVoiceId = useOnboardingStore((s) => s.setVoiceId);
 
-  const [url, setLocalUrl] = useState("");
   const [howOpen, setHowOpen] = useState(false);
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-  const urlInputRef = useRef<HTMLInputElement>(null);
-  const spotRef = useRef<HTMLDivElement>(null);
-  const { index: wordIndex, prev: wordPrev } = useWordCycle(HERO_PHRASES.length);
 
-  // Cursor spotlight: a soft pool of light trails the pointer across the
-  // canvas. Desktop pointers only — on touch it rests at its default spot
-  // behind the stage. Writes the style directly (no re-render per mousemove);
-  // the CSS transition supplies the damped "chase".
-  useEffect(() => {
-    if (!window.matchMedia("(pointer: fine)").matches) return;
-    let raf = 0;
-    const onMove = (e: MouseEvent) => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        spotRef.current?.style.setProperty(
-          "transform",
-          `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`,
-        );
-      });
-    };
-    window.addEventListener("mousemove", onMove, { passive: true });
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  useEffect(() => () => stopSpeaking(), []);
-
-  function noWebsite() {
-    stopSpeaking();
+  /** Enter the guided funnel. `skipWebsite()` is what makes /onboarding
+   *  reachable — it bounces visitors straight back here when neither a URL nor
+   *  the skip flag is set. Business details are collected on step 2 instead. */
+  function startDemo(source: string) {
+    // Marketing conversion signal — a UNIQUE event (not GTM's generic
+    // gtm.formSubmit) so it can be tracked on its own in GTM / GA4 / Google Ads.
+    trackEvent("generate_ai_receptionist", { source });
     const keepVoice = voiceId;
     reset();
     setVoiceId(keepVoice);
@@ -143,395 +192,404 @@ export default function LandingPage() {
     navigate("/onboarding");
   }
 
-  // Triggered by the button click and by Enter in the URL field — NOT a native
-  // form submit, so GTM's built-in form-submission listener never fires
-  // `gtm.formSubmit`. Only our own `generate_ai_receptionist` event goes out.
-  async function buildAgent() {
-    if (checking) return; // ignore rapid double-clicks while a check is in flight
-
-    const v = url.trim();
-    setChecking(true);
-    // One toast id so repeated submits update in place instead of stacking up.
-    const errId = "landing-url";
-    try {
-      if (!v) {
-        toast.error("Please enter your website URL", { id: errId });
-        await delay(500); // brief loader so the button can't be machine-gunned
-        return;
-      }
-      if (!isValidWebsite(v)) {
-        toast.error("Hmm, that doesn't look like a website. Try something like yourbusiness.com", { id: errId });
-        await delay(500);
-        return;
-      }
-
-      const { reachable } = await api.onboard.validate(v);
-      if (!reachable) {
-        toast.error("We couldn't reach that website. Check the address and try again.", { id: errId });
-        return;
-      }
-      // Marketing conversion signal — a UNIQUE event (not GTM's generic
-      // gtm.formSubmit) so this can be tracked on its own in GTM / GA4 / Google
-      // Ads. Fired only here, on the success path: the URL is non-blank, a valid
-      // website, AND reachable, and we're actually generating the receptionist —
-      // never on a blank or rejected submission.
-      trackEvent("generate_ai_receptionist", { website_url: v });
-      stopSpeaking();
-      const keepVoice = voiceId;
-      reset();
-      setVoiceId(keepVoice);
-      setUrl(v);
-      navigate("/onboarding");
-    } catch {
-      toast.error("Couldn't verify that website. Please try again.", { id: errId });
-    } finally {
-      setChecking(false);
-    }
-  }
-
-  function pickVoice(id: string) {
-    setVoiceId(id);
-    stopSpeaking();
-    const v = LANDING_VOICES.find((x) => x.id === id);
-    if (!v) return;
-    setPlayingId(id);
-    // Pass the raw id — LANDING_VOICES are ElevenLabs voice_ids, and squeezing
-    // them through deepgramVoiceFor() collapsed every sample to the default
-    // Deepgram voice. providerForVoiceId picks the right engine per id.
-    speak(`Hi, I'm ${v.name}, your AI receptionist. I'll answer every call and book your jobs.`, {
-      voiceId: id,
-      provider: providerForVoiceId(id),
-      onEnd: () => setPlayingId((p) => (p === id ? null : p)),
-    });
+  function scrollToFeatures() {
+    document.getElementById("features")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-background lg:h-screen lg:overflow-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/70 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-5 py-3.5 sm:px-8">
-          <Link to="/" className="flex items-center gap-2 font-semibold">
-            <BrandLogo imgClassName="h-12 w-auto max-w-[230px] object-contain">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                <PhoneCall className="size-5" />
-              </span>
-              <span className="text-[17px]">
-                tradiephone<span className="text-primary">.ai</span>
-              </span>
-            </BrandLogo>
-          </Link>
-          <div className="flex items-center gap-2.5">
-            <QuickControls />
-            <Button asChild className="shadow-md transition-shadow hover:shadow-lg">
-              <Link to="/login">
-                <LogIn className="size-4" /> Sign In
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero — single centered column, the URL form is the sole focus */}
-      {/* Backdrop: flowing sound waves (the product's voice, humming across
-          the canvas) + a cursor spotlight that trails the pointer. Both
-          respond while a voice sample plays. Reduced-motion safe. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <svg
-          className={cn(
-            "absolute inset-x-0 top-[54%] h-[72%] w-full -translate-y-1/2 [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]",
-            playingId && "lp-waves-active",
-          )}
-          viewBox="0 0 1440 600"
-          preserveAspectRatio="none"
-          fill="none"
-        >
-          <g className="lp-wave lp-wave-glow">
-            <path d="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" stroke="hsl(217 84% 55% / 0.30)" strokeWidth="2" pathLength="1" />
-            <path d="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" stroke="hsl(217 84% 55% / 0.30)" strokeWidth="2" pathLength="1" transform="translate(1440 0)" />
-            <circle r="4" fill="hsl(217 84% 55% / 0.55)">
-              <animateMotion dur="16s" repeatCount="indefinite" path="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" />
-            </circle>
-            <circle r="2.5" fill="hsl(217 84% 55% / 0.4)">
-              <animateMotion dur="16s" begin="-8s" repeatCount="indefinite" path="M0 300 C 240 210, 480 390, 720 300 C 960 210, 1200 390, 1440 300" />
-            </circle>
-          </g>
-          <g className="lp-wave lp-wave-2">
-            <path d="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" stroke="hsl(217 84% 55% / 0.20)" strokeWidth="2" pathLength="1" />
-            <path d="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" stroke="hsl(217 84% 55% / 0.20)" strokeWidth="2" pathLength="1" transform="translate(1440 0)" />
-            <circle r="3" fill="hsl(217 84% 55% / 0.35)">
-              <animateMotion dur="22s" begin="-5s" repeatCount="indefinite" path="M0 345 C 240 440, 480 250, 720 345 C 960 440, 1200 250, 1440 345" />
-            </circle>
-          </g>
-          <g className="lp-wave lp-wave-3">
-            <path d="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" stroke="hsl(217 84% 55% / 0.13)" strokeWidth="1.5" pathLength="1" />
-            <path d="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" stroke="hsl(217 84% 55% / 0.13)" strokeWidth="1.5" pathLength="1" transform="translate(1440 0)" />
-            <circle r="2.5" fill="hsl(217 84% 55% / 0.3)">
-              <animateMotion dur="26s" begin="-13s" repeatCount="indefinite" path="M0 255 C 240 195, 480 315, 720 255 C 960 195, 1200 315, 1440 255" />
-            </circle>
-          </g>
-        </svg>
-        <div
-          ref={spotRef}
-          className={cn(
-            "lp-spot absolute left-0 top-0 size-[54rem] rounded-full transition-transform duration-300 ease-out will-change-transform",
-            playingId && "lp-spot-active",
-          )}
-          style={{ transform: "translate3d(50vw, 44vh, 0) translate(-50%, -50%)" }}
-        />
-      </div>
-
-      <main className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 px-5 sm:px-8 lg:min-h-0">
-        <div className="flex w-full">
-          <div className="lp-hero grid w-full items-center pb-14 pt-10 sm:pt-14 lg:h-full lg:py-4">
-          {/* ---------------- The ask ---------------- */}
-          <section className="lp-copy mx-auto w-full max-w-xl text-center lg:max-w-[620px]">
-            <span
-              className="animate-rise inline-flex items-center gap-2 rounded-full border border-primary/25 bg-card/80 px-4 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur-sm"
-              style={rise(0)}
-            >
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:animate-none" />
-                <span className="relative inline-flex size-2 rounded-full bg-success" />
-              </span>
-              AI receptionist · live in minutes
-            </span>
-
-            <h1
-              aria-label="Turn missed calls into instant revenue."
-              className="mt-6 text-[2.6rem] font-bold leading-[1.06] tracking-tight sm:text-6xl lg:text-[3.4rem] lg:leading-[1.04] xl:text-[4rem] 2xl:text-[4.35rem]"
-            >
-              <span aria-hidden="true">
-                <span className="block text-balance">
-                  {HEADLINE_WORDS.map((w) => (
-                    <Fragment key={w.text}>
-                      <span className="hw-word" style={{ animationDelay: `${w.delay}ms` }}>
-                        {w.text}
-                      </span>{" "}
-                    </Fragment>
-                  ))}
+    <div className="min-h-screen overflow-x-clip bg-[#F8F9FB]">
+      <div className="lp-page bg-[#F8F9FB] font-sans text-[#0F172A] antialiased">
+        {/* ------------------------------ header ------------------------------ */}
+        <header className="mx-auto w-full px-5 py-6 sm:px-8 lg:w-[1421px] lg:px-0 lg:py-[30px]">
+          <div className="flex items-center justify-between gap-6">
+            <Link to="/" className="flex shrink-0 items-center gap-2.5">
+              <BrandLogo imgClassName="h-[38px] w-auto max-w-[230px] object-contain">
+                <span className="grid size-[38px] place-items-center rounded-[12px] bg-[#F97316] shadow-[0_6px_16px_-6px_rgba(249,115,22,0.6)]">
+                  <PhoneCall className="size-[19px] text-white" strokeWidth={2.2} />
                 </span>
-                {/* Rotating gradient phrase — grid-stacked so the line never
-                    changes height; hw-payoff gives it the initial blur-reveal.
-                    Motion stays on the wrapper, the gradient (bg-clip:text)
-                    stays on the inner span — never merge the two. */}
-                <span className="word-cycle hw-payoff" style={{ animationDelay: "420ms" }}>
-                  {HERO_PHRASES.map((phrase, i) => (
-                    <span
-                      key={phrase}
-                      className={cn(
-                        "word-cycle-item",
-                        i === wordIndex && wordPrev !== -1 && "word-cycle-in",
-                        i === wordPrev && "word-cycle-out",
-                      )}
-                      style={i === 0 && wordPrev === -1 ? { opacity: 1 } : undefined}
-                    >
-                      <span className="animate-gradient bg-gradient-to-r from-primary via-[#22D3EE] to-[#7C5CFC] bg-clip-text text-transparent">
-                        {phrase}
-                      </span>
-                    </span>
-                  ))}
+                <span className="text-[21px] font-bold tracking-[-0.02em] text-[#0F172A]">
+                  tradiephone<span className="text-[#F97316]">.ai</span>
                 </span>
-              </span>
-            </h1>
+              </BrandLogo>
+            </Link>
 
-            <p
-              className="animate-rise mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground lg:max-w-[34rem]"
-              style={rise(420)}
-            >
-              Capture every lead with a human-like AI receptionist.{" "}
-              <span className="font-semibold text-primary">Enter your website URL</span> to try a
-              demo instantly.
-            </p>
-
-            {/* URL form — the #1 element on the page: chromatic halo + glass card,
-                full-width banner CTA */}
-            <div className="animate-rise group relative mt-9" style={rise(520)}>
-              {/* Decorative glow — must not catch clicks: -inset-8 extends it over
-                  the buttons below (opacity-0 still hit-tests), which was swallowing
-                  clicks on "How it works" / "I don't have a website". */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -inset-8 rounded-[36px] bg-primary/15 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-70"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -inset-[2px] rounded-[22px] bg-primary/30 opacity-60 blur-[3px] transition-opacity duration-300 group-focus-within:opacity-100"
-              />
-              <div
-                className="card-glass relative rounded-[20px] border border-border p-3 shadow-[var(--shadow-panel)] transition-shadow focus-within:shadow-xl sm:p-3.5"
-              >
-                <div className="flex items-center gap-2.5 rounded-[14px] border border-border bg-background px-4 transition-colors focus-within:border-primary/60">
-                  <Globe className="size-4 shrink-0 text-muted-foreground" />
-                  <input
-                    ref={urlInputRef}
-                    value={url}
-                    onChange={(e) => setLocalUrl(e.target.value)}
-                    onKeyDown={(e) => {
-                      // Enter still triggers generation — but as a click, not a
-                      // native form submit, so no gtm.formSubmit fires.
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void buildAgent();
-                      }
-                    }}
-                    placeholder="Enter your website URL"
-                    className="h-[52px] w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  onClick={() => void buildAgent()}
-                  size="lg"
-                  disabled={checking}
-                  className="group relative mt-2.5 h-[52px] w-full justify-center overflow-visible text-[15px] font-semibold shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/35"
-                >
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
-                  >
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent group-hover:animate-[shimmer_0.9s_ease-out]" />
-                  </span>
-                  {checking ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" /> Checking your website…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="size-4" /> Generate your AI receptionist
-                    </>
-                  )}
-                  <span className="absolute -right-2 -top-2 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                    FREE
-                  </span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Secondary paths */}
-            <div
-              className="animate-rise mt-5 flex items-center justify-center gap-3 text-sm"
-              style={rise(600)}
-            >
-              <button
-                type="button"
-                onClick={noWebsite}
-                className="font-medium text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-primary hover:decoration-primary"
-              >
-                I don't have a website
-              </button>
-              <span aria-hidden className="size-1 rounded-full bg-border" />
+            <nav className="hidden items-center gap-[52px] lg:flex">
               <button
                 type="button"
                 onClick={() => setHowOpen(true)}
-                className="inline-flex items-center gap-1.5 font-medium text-primary transition-colors hover:text-primary/80"
+                className="text-[15px] font-medium text-[#4B5563] transition-colors hover:text-[#0F172A]"
               >
-                <Info className="size-4" /> How it works
+                How it works
               </button>
+              <button
+                type="button"
+                onClick={scrollToFeatures}
+                className="text-[15px] font-medium text-[#4B5563] transition-colors hover:text-[#0F172A]"
+              >
+                Features
+              </button>
+              <Link
+                to="/subscribe"
+                className="text-[15px] font-medium text-[#4B5563] transition-colors hover:text-[#0F172A]"
+              >
+                Pricing
+              </Link>
+              <button
+                type="button"
+                onClick={() => startDemo("nav_demo")}
+                className="text-[15px] font-medium text-[#4B5563] transition-colors hover:text-[#0F172A]"
+              >
+                Demo
+              </button>
+            </nav>
+
+            <div className="flex shrink-0 items-center gap-[41px]">
+              <span className="hidden h-[42px] items-center gap-2 rounded-full border border-[#E7E9EE] bg-white px-[18px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:inline-flex">
+                <span className="lp-pulse size-[7px] rounded-full bg-[#22C55E]" />
+                <span className="text-[13.5px] font-medium text-[#374151]">
+                  AI Receptionist &bull; Live
+                </span>
+              </span>
+              <Link
+                to="/login"
+                className="inline-flex h-[42px] items-center rounded-[10px] bg-[#F97316] px-[22px] text-[15px] font-semibold text-white shadow-[0_8px_20px_-10px_rgba(249,115,22,0.7)] transition-colors hover:bg-[#EA580C]"
+              >
+                Sign in
+              </Link>
             </div>
-
-            {/* Select your voice — tap a chip to hear a live sample. Rendered as a
-                highlighted panel (tinted + glowing border + pulsing badge) so the
-                picker reads as the hero's second step instead of fading into the
-                background below the CTA. */}
-            <div
-              className="animate-rise mt-9 rounded-3xl border border-primary/25 bg-primary/[0.04] p-4 sm:p-5"
-              style={rise(660)}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <p className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm">
-                  <span className="relative flex size-2">
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/80" />
-                    <span className="relative inline-flex size-2 rounded-full bg-white" />
-                  </span>
-                  Select your voice
-                </p>
-                <p className="inline-flex items-center gap-1.5 text-xs font-medium text-primary">
-                  <Volume2 className="size-3.5" /> Tap a voice to hear a live sample.
-                </p>
-              </div>
-              <div className="mt-3.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                {LANDING_VOICES.map((v, i) => {
-                  const selected = voiceId === v.id;
-                  const playing = playingId === v.id;
-                  const accent = VOICE_ACCENT[v.id] ?? "#2C76ED";
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      onClick={() => pickVoice(v.id)}
-                      title={`Hear ${v.name}`}
-                      className={cn(
-                        "card-glass lift animate-rise group relative flex items-center gap-2.5 overflow-hidden rounded-2xl border p-2.5 text-left",
-                        selected ? "border-primary/60 ring-1 ring-primary/25" : "border-border",
-                      )}
-                      style={rise(700 + i * 60)}
-                    >
-                      <span
-                        className="relative grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-bold text-white transition-transform duration-300 group-hover:scale-105"
-                        style={{
-                          background: `linear-gradient(135deg, ${accent}, ${accent}99)`,
-                          boxShadow: selected
-                            ? `0 0 0 2px ${accent}40, 0 8px 18px -8px ${accent}88`
-                            : `0 8px 18px -10px ${accent}77`,
-                        }}
-                      >
-                        {playing ? (
-                          <span className="flex h-3.5 items-center gap-[2px]">
-                            {[9, 13, 7, 11].map((h, bi) => (
-                              <span
-                                key={bi}
-                                className="eq-bar w-[2px] rounded-full bg-white"
-                                style={{ height: h, animationDelay: `${bi * 140}ms` }}
-                              />
-                            ))}
-                          </span>
-                        ) : (
-                          v.name.charAt(0)
-                        )}
-                        {selected && !playing && (
-                          <span className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border-2 border-card bg-success text-white">
-                            <Check className="size-2.5" />
-                          </span>
-                        )}
-                        {playing && (
-                          <span className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border-2 border-card bg-primary text-white">
-                            <Volume2 className="size-2.5" />
-                          </span>
-                        )}
-                      </span>
-                      <span className="min-w-0 leading-tight">
-                        <span
-                          className={cn(
-                            "block truncate text-[13px] font-semibold",
-                            selected ? "text-foreground" : "text-foreground/85",
-                          )}
-                        >
-                          {v.name}
-                        </span>
-                        <span className="block truncate text-[11px] text-muted-foreground">{v.region}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Trust line */}
-            <ul
-              className="animate-rise mt-9 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-border/60 pt-5 text-[13px] font-medium text-muted-foreground"
-              style={rise(940)}
-            >
-              {TRUST_ITEMS.map((t) => (
-                <li key={t} className="inline-flex items-center gap-1.5">
-                  <Check className="size-3.5 text-success" /> {t}
-                </li>
-              ))}
-            </ul>
-          </section>
-
           </div>
-        </div>
-      </main>
+        </header>
+
+        {/* ------------------------------- stage ------------------------------- */}
+        <main className="mx-auto w-full px-5 pb-16 pt-10 sm:px-8 lg:w-[1445px] lg:px-0 lg:pb-[58px] lg:pt-[52px]">
+          <div className="flex flex-col items-center gap-16 lg:grid lg:grid-cols-[466px_minmax(0,1fr)_483px] lg:items-start lg:gap-0">
+            {/* =========================== THE OLD WAY =========================== */}
+            <section className="relative order-2 w-full max-w-[466px] lg:order-1 lg:w-[466px]">
+              <div className="mx-auto flex w-full max-w-[360px] flex-col items-center text-center lg:ml-[106px] lg:mr-0 lg:w-[360px] lg:max-w-none">
+                <span className="lp-in" style={rise(80)}>
+                  <Eyebrow tone="loss">The old way</Eyebrow>
+                </span>
+                <h2
+                  className="lp-in mt-[19px] text-[30px] font-bold leading-[36px] tracking-[-0.025em] lg:whitespace-nowrap"
+                  style={rise(140)}
+                >
+                  Missed call.
+                  <br />
+                  Missed opportunity.
+                </h2>
+
+                <PhoneShell className="lp-in mt-[28px]">
+                  <div className="flex h-full flex-col items-center pt-[52px]">
+                    <p className="text-[13px] leading-4 text-[#9CA3AF]">Incoming call</p>
+                    <p className="mt-2.5 text-[20px] font-bold leading-[26px] tracking-[-0.02em] text-[#0F172A]">
+                      New Customer
+                    </p>
+                    <p className="mt-2 text-[13px] leading-4 tracking-[0.01em] text-[#9CA3AF]">
+                      0412 555 123
+                    </p>
+
+                    {/* The call button nobody pressed */}
+                    <div className="relative mt-[72px] grid size-[70px] place-items-center">
+                      <span
+                        aria-hidden
+                        className="absolute -inset-6 rounded-full bg-[#EF4444] opacity-[0.07]"
+                      />
+                      <span
+                        aria-hidden
+                        className="lp-ring absolute -inset-3 rounded-full border-2 border-[#EF4444] opacity-0"
+                      />
+                      <span className="relative grid size-[70px] place-items-center rounded-full bg-[#EF4444] shadow-[0_12px_28px_-12px_rgba(239,68,68,0.85)]">
+                        <Phone
+                          className="size-[26px] rotate-[135deg] text-white"
+                          strokeWidth={2}
+                          fill="currentColor"
+                        />
+                      </span>
+                    </div>
+
+                    <p className="mt-[56px] text-[13px] leading-4 text-[#9CA3AF]">No answer</p>
+                  </div>
+                </PhoneShell>
+              </div>
+
+              {/* Losses — pinned to the far left of the column on desktop */}
+              <div className="mt-10 grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:absolute lg:left-0 lg:top-[260px] lg:mt-0 lg:flex lg:w-[142px] lg:flex-col lg:gap-[22px]">
+                {LOSS_CHIPS.map((c, i) => (
+                  <OutcomeChip
+                    key={c.label}
+                    tone="loss"
+                    icon={c.icon}
+                    label={c.label}
+                    delay={i * 900}
+                  />
+                ))}
+              </div>
+
+              {/* Handwritten margin note */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-[63px] top-[596px] hidden lg:block"
+              >
+                <div className="relative">
+                  <p className="lp-hand -rotate-2 text-[19px] leading-[23px] text-[#EE6A6D]">
+                    They called
+                    <br />
+                    you... but
+                    <br />
+                    no one answered.
+                  </p>
+                  <svg
+                    className="absolute -right-[46px] -top-[46px] h-[60px] w-[48px] text-[#EE6A6D]"
+                    viewBox="0 0 48 60"
+                    fill="none"
+                  >
+                    <path
+                      d="M4 56C21 51 34 39 40 9"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M32 15L40.5 6.5L43.5 17.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </section>
+
+            {/* ============================ THE PITCH ============================ */}
+            <section className="order-1 flex w-full max-w-[496px] flex-col items-center text-center lg:order-2 lg:max-w-none">
+              <span
+                aria-hidden
+                className="-mt-9 hidden h-[212px] w-px bg-gradient-to-b from-transparent to-[#DCE0E6] lg:block"
+              />
+
+              <h1
+                className="lp-in text-[38px] font-bold leading-[1.14] tracking-[-0.035em] sm:text-[46px] lg:mt-[52px] lg:leading-[53px]"
+                style={rise(0)}
+              >
+                Same call.
+                <br />
+                <span className="text-[#16A34A]">Better</span> outcome.
+              </h1>
+
+              <p
+                className="lp-in mt-[27px] max-w-[400px] text-[17px] leading-[26px] text-[#6B7280]"
+                style={rise(90)}
+              >
+                Our AI receptionist answers every call, qualifies leads, and books jobs &mdash; 24/7.
+              </p>
+
+              <span
+                aria-hidden
+                className="lp-in mt-[46px] grid size-[56px] place-items-center rounded-full bg-white shadow-[0_2px_4px_rgba(15,23,42,0.04),0_12px_28px_-10px_rgba(15,23,42,0.22)]"
+                style={rise(160)}
+              >
+                <Phone
+                  className="size-[21px] text-[#F97316]"
+                  strokeWidth={2.1}
+                  fill="currentColor"
+                />
+              </span>
+
+              <button
+                type="button"
+                onClick={() => startDemo("hero_cta")}
+                className="lp-in group mt-[50px] inline-flex h-[51px] w-full max-w-[312px] items-center justify-center gap-2.5 rounded-[12px] bg-[#F97316] text-[16px] font-semibold text-white shadow-[0_14px_30px_-12px_rgba(249,115,22,0.65)] transition-colors hover:bg-[#EA580C]"
+                style={rise(230)}
+              >
+                Try AI Receptionist
+                <ArrowRight className="size-[17px] transition-transform group-hover:translate-x-0.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setHowOpen(true)}
+                className="lp-in mt-[28px] inline-flex items-center gap-2 text-[15px] font-medium text-[#1F2937] transition-colors hover:text-[#F97316]"
+                style={rise(300)}
+              >
+                <span className="grid size-[15px] place-items-center rounded-full bg-[#F97316]">
+                  <Play className="size-[7px] translate-x-[0.5px] fill-white text-white" />
+                </span>
+                Watch 60 sec demo
+              </button>
+            </section>
+
+            {/* ============================ THE AI WAY ============================ */}
+            <section className="relative order-3 w-full max-w-[483px] lg:w-[483px]">
+              <div className="mx-auto flex w-full max-w-[360px] flex-col items-center text-center lg:mx-0 lg:w-[360px] lg:max-w-none">
+                <span className="lp-in" style={rise(80)}>
+                  <Eyebrow tone="win">The AI way</Eyebrow>
+                </span>
+                <h2
+                  className="lp-in mt-[19px] text-[30px] font-bold leading-[36px] tracking-[-0.025em] lg:whitespace-nowrap"
+                  style={rise(140)}
+                >
+                  Every call answered.
+                  <br />
+                  Every opportunity captured.
+                </h2>
+
+                <PhoneShell className="lp-in mt-[28px]">
+                  <div className="flex h-full flex-col px-[27px] pt-[45px] text-left">
+                    {/* live-call header */}
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid size-[30px] shrink-0 place-items-center rounded-[10px] bg-[#EAFBF1]">
+                        <Sparkles className="size-[16px] text-[#22A45D]" strokeWidth={2} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[14.5px] font-bold leading-[18px] tracking-[-0.01em] text-[#0F172A]">
+                          AI Receptionist
+                        </span>
+                        <span className="mt-[3px] flex items-center gap-1.5">
+                          <span className="lp-pulse size-[6px] rounded-full bg-[#22C55E]" />
+                          <span className="text-[11.5px] leading-[13px] text-[#9CA3AF]">
+                            Live call &bull; 00:32
+                          </span>
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* waveform */}
+                    <div className="mt-[25px] flex h-[50px] w-[166px] items-center gap-[1.6px] self-center">
+                      {WAVE.map((h, i) => (
+                        <span
+                          key={i}
+                          className="lp-bar w-[2px] rounded-full bg-[#22C55E]"
+                          style={
+                            {
+                              height: `${Math.round(h * 100)}%`,
+                              opacity: 0.55 + h * 0.45,
+                              "--lp-delay": `${(i % 7) * 110}ms`,
+                            } as CSSProperties
+                          }
+                        />
+                      ))}
+                    </div>
+
+                    {/* transcript — avatars hang off the bezel */}
+                    <div className="relative -mx-[27px] mt-[25px] px-[2px]">
+                      <div className="relative">
+                        <span className="absolute -left-[38px] top-0">
+                          <ChatAvatar kind="caller" />
+                        </span>
+                        <p className="w-[172px] rounded-2xl border border-[#EFF1F4] bg-white px-3 py-2.5 text-[10.5px] leading-[15px] tracking-[-0.005em] text-[#3C4657] shadow-[0_6px_18px_-10px_rgba(15,23,42,0.25)]">
+                          Hi! How can I help you today?
+                        </p>
+                      </div>
+
+                      <div className="relative mt-[28px]">
+                        <span className="absolute -right-[38px] top-1/2 -translate-y-1/2">
+                          <ChatAvatar kind="caller" />
+                        </span>
+                        <p className="ml-auto w-[152px] rounded-2xl border border-[#D6F5E3] bg-[#EAFBF1] px-3 py-2.5 text-[10.5px] leading-[15px] tracking-[-0.005em] text-[#28323F] shadow-[0_6px_18px_-12px_rgba(15,23,42,0.2)]">
+                          I need a quote for a bathroom renovation.
+                        </p>
+                      </div>
+
+                      <div className="relative mt-[28px]">
+                        <span className="absolute -left-[38px] top-0">
+                          <ChatAvatar kind="ai" />
+                        </span>
+                        <p className="w-[178px] rounded-2xl border border-[#EFF1F4] bg-white px-3 py-2.5 text-[10.5px] leading-[15px] tracking-[-0.005em] text-[#3C4657] shadow-[0_6px_18px_-10px_rgba(15,23,42,0.25)]">
+                          Sure! Can you tell me your suburb so I can check availability?
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </PhoneShell>
+              </div>
+
+              {/* Wins — pinned to the far right of the column on desktop */}
+              <div className="mt-10 grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:absolute lg:right-0 lg:top-[268px] lg:mt-0 lg:flex lg:w-[150px] lg:flex-col lg:gap-[22px]">
+                {WIN_CHIPS.map((c, i) => (
+                  <OutcomeChip
+                    key={c.label}
+                    tone="win"
+                    icon={c.icon}
+                    label={c.label}
+                    delay={i * 900 + 450}
+                  />
+                ))}
+              </div>
+
+              {/* Handwritten margin note */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute right-[81px] top-[616px] hidden lg:block"
+              >
+                <div className="relative">
+                  <p className="lp-hand rotate-2 text-right text-[19px] leading-[23px] text-[#3FBF74]">
+                    They called
+                    <br />
+                    you... and got
+                    <br />a great experience.
+                  </p>
+                  <svg
+                    className="absolute -left-[50px] -top-[42px] h-[60px] w-[48px] text-[#3FBF74]"
+                    viewBox="0 0 48 60"
+                    fill="none"
+                  >
+                    <path
+                      d="M44 56C27 51 14 39 8 9"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M16 15L7.5 6.5L4.5 17.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* ---------------------------- feature bar ---------------------------- */}
+          <div
+            id="features"
+            className="lp-in mx-auto mt-16 w-full max-w-[1181px] rounded-[18px] border border-[#EAECF0] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_44px_-26px_rgba(15,23,42,0.22)] lg:mt-[60px] lg:w-[1181px]"
+            style={rise(380)}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:h-[88px] lg:grid-cols-4">
+              {FEATURES.map(({ icon: Icon, title, body, ring }, i) => (
+                <div
+                  key={title}
+                  className="relative flex items-center gap-[19px] px-6 py-5 lg:px-0 lg:py-0 lg:pl-[41px]"
+                >
+                  {i > 0 && (
+                    <span
+                      aria-hidden
+                      className="absolute left-0 top-1/2 hidden h-[44px] w-px -translate-y-1/2 bg-[#EAECF0] lg:block"
+                    />
+                  )}
+                  <span
+                    className={cn("grid size-[34px] shrink-0 place-items-center rounded-full", ring)}
+                  >
+                    <Icon className="size-[17px]" strokeWidth={2} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[14.5px] font-semibold leading-[18px] tracking-[-0.01em] text-[#0F172A]">
+                      {title}
+                    </span>
+                    <span className="mt-[3px] block text-[12.5px] leading-[16px] text-[#8A93A2]">
+                      {body}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
 
       <HowItWorksDialog open={howOpen} onOpenChange={setHowOpen} />
     </div>

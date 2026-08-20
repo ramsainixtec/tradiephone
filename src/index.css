@@ -809,190 +809,7 @@
   box-shadow: 0 18px 40px -16px hsl(217 84% 20% / 0.5);
 }
 
-/* ------------------------------------------------------------------ *
- *  Landing page helpers — "Split Product Stage"
- *  (replaces the previous landing-helpers section; the shared dashboard
- *  helpers above — card-glass, lift, animate-rise, animate-glow,
- *  animate-live, shimmer — are unchanged and still used here.)
- * ------------------------------------------------------------------ */
-
-/* Flowing sound-wave lines behind the hero. Each group holds two copies of a
- * periodic path (period = 1440 user units); sliding one full period and
- * looping reads as an endless waveform. Different durations per line give a
- * slow parallax hum. */
-@keyframes lpWave {
-  to {
-    transform: translateX(-1440px);
-  }
-}
-.lp-wave {
-  animation: lpWave 38s linear infinite;
-}
-.lp-wave-2 {
-  animation-duration: 56s;
-  animation-direction: reverse;
-}
-.lp-wave-3 {
-  animation-duration: 72s;
-}
-/* On load each wave sketches itself across the canvas once (dash reveal —
- * paths carry pathLength="1"), then the flow loop carries on. The signal
- * dots hold back until the lines have finished drawing. */
-.lp-wave path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: lpDraw 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.lp-wave-2 path {
-  animation-delay: 0.25s;
-}
-.lp-wave-3 path {
-  animation-delay: 0.5s;
-}
-@keyframes lpDraw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-.lp-wave circle {
-  opacity: 0;
-  animation: lpDotIn 0.8s ease-out 1.8s forwards;
-}
-@keyframes lpDotIn {
-  to {
-    opacity: 1;
-  }
-}
-
-/* Soft light under the primary wave — the line reads as lit, not printed. */
-.lp-wave-glow {
-  filter: drop-shadow(0 0 7px hsl(217 84% 55% / 0.3));
-}
-
-/* While a voice sample is playing, the whole wave field "breathes" — a
- * gentle amplitude swell + brightness lift, so the page audibly speaking is
- * also visibly speaking. transform must re-state the base -50% Y shift. */
-.lp-waves-active {
-  animation: lpWavesBreath 1.4s ease-in-out infinite;
-}
-.lp-waves-active .lp-wave {
-  filter: brightness(1.3) saturate(1.25);
-}
-@keyframes lpWavesBreath {
-  0%,
-  100% {
-    transform: translateY(-50%) scaleY(1);
-  }
-  50% {
-    transform: translateY(-50%) scaleY(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-wave,
-  .lp-waves-active {
-    animation: none;
-  }
-  .lp-wave path {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-  .lp-wave circle {
-    animation: none;
-    opacity: 1;
-  }
-  .lp-waves-active .lp-wave {
-    filter: none;
-  }
-}
-
-/* Cursor spotlight — a soft pool of brand light that trails the pointer.
- * Pure radial gradient, no blur filter (cheap to move every frame). */
-.lp-spot {
-  background: radial-gradient(
-    closest-side,
-    hsl(217 84% 55% / 0.1),
-    hsl(217 84% 55% / 0.045) 45%,
-    transparent 72%
-  );
-  transition-property: transform, filter;
-}
-.dark .lp-spot {
-  background: radial-gradient(
-    closest-side,
-    hsl(217 84% 55% / 0.16),
-    hsl(217 84% 55% / 0.07) 45%,
-    transparent 72%
-  );
-}
-/* While a voice sample plays the light warms up — the page is "speaking". */
-.lp-spot-active {
-  filter: brightness(1.5) saturate(1.2);
-}
-
-/* Soft single-tone seat under the product stage frame — just enough lift
- * to separate it from the canvas, no multi-color bloom. */
-.lp-stage-halo {
-  position: absolute;
-  inset: -2rem;
-  border-radius: 3rem;
-  pointer-events: none;
-  background: radial-gradient(55% 55% at 50% 32%, hsl(217 84% 55% / 0.1), transparent 72%);
-  filter: blur(24px);
-}
-.dark .lp-stage-halo {
-  opacity: 0.8;
-}
-
-/* Gentle vertical drift for the stage cards — offset phases via
- * --lp-drift-delay so the three cards never bob in unison. */
-@keyframes lpDrift {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-.lp-drift {
-  animation: lpDrift 7s ease-in-out infinite;
-  animation-delay: var(--lp-drift-delay, 0s);
-}
-
-/* Live-transcript "typing" dots */
-@keyframes lpDot {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.45;
-  }
-  30% {
-    transform: translateY(-3px);
-    opacity: 1;
-  }
-}
-.lp-dot {
-  animation: lpDot 1.2s ease-in-out infinite;
-}
-
-/* Slow pan for the gradient headline */
-@keyframes gradientPan {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradientPan 6s ease-in-out infinite;
-}
-
-/* Voice sample equalizer bars */
+/* Voice sample equalizer bars — shared with the AI Brain identity section. */
 @keyframes eqBounce {
   0%,
   100% {
@@ -1007,135 +824,194 @@
   animation: eqBounce 0.9s ease-in-out infinite;
 }
 
-/* Hero headline — "Focus Cascade" word reveal.
- * Each word materializes: rises ~0.55em while de-blurring from 10px,
- * staggered per-word via inline animation-delay. fill-mode: backwards
- * keeps words hidden during their delay and leaves no residual
- * filter/transform afterwards, so text stays crisp. Transform + filter +
- * opacity only ⇒ zero layout shift. */
-@keyframes hwWordIn {
-  from {
-    opacity: 0;
-    transform: translateY(var(--hw-y, 0.55em)) scale(0.98);
-    filter: blur(var(--hw-blur, 10px));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-.hw-word {
-  display: inline-block;
-  transform-origin: 50% 85%;
-  animation: hwWordIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-/* Gradient payoff phrase — animated as ONE unit so the brand gradient and
- * its 6s pan stay continuous across both words (splitting per word makes the
- * colors mismatch at the seam). Gradient colors come from the Tailwind
- * bg-clip utilities on the element; only size/motion live here. */
-.hw-payoff {
-  --hw-y: 0.65em;
-  --hw-blur: 14px;
-  background-size: 200% 200%;
-  animation:
-    hwWordIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) backwards,
-    gradientPan 6s ease-in-out infinite;
+/* ------------------------------------------------------------------ *
+ *  Landing page — "Same call. Better outcome."
+ *
+ *  The hero is a pixel-fixed 1445 x 1024 composition: two phone mockups
+ *  flanking the pitch, with outcome chips and handwritten notes pinned at
+ *  exact offsets. Fluid columns would drift those anchors, so from `lg` up
+ *  the whole page renders at its design size and `zoom` scales it to the
+ *  viewport — layout-level scaling, so text stays crisp and every offset
+ *  keeps its relationship. Below `lg` the composition unstacks into a
+ *  normal responsive flow and zoom is off.
+ * ------------------------------------------------------------------ */
+
+.lp-page {
+  --lp-zw: 1; /* width-driven scale  */
+  --lp-zh: 1; /* height-driven scale */
 }
 
-/* Hero headline — rotating tail phrase (slide + blur crossfade).
- * All phrases stack in one grid cell so the row is always exactly one line
- * tall and nothing below the headline ever moves. The React hook drives
- * which item is entering/leaving; idle items stay hidden. */
-@keyframes wordCycleIn {
-  from {
-    opacity: 0;
-    transform: translateY(0.38em);
-    filter: blur(4px);
+/* The smaller of the two wins, so the composition never overflows either axis. */
+@media (min-width: 1024px) {
+  .lp-page {
+    zoom: min(var(--lp-zw), var(--lp-zh));
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0px);
-  }
-}
-@keyframes wordCycleOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0px);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-0.3em);
-    filter: blur(4px);
-  }
-}
-.word-cycle {
-  display: grid;
-  /* Cap the phrase size on very narrow phones so the longest phrase never
-   * wraps or clips; at >= ~460px this is just 1em. */
-  font-size: min(1em, 10.2vw);
-}
-/* NOTE: the in/out motion lives on this wrapper while the gradient
- * (background-clip: text) lives on a child span. Animating filter/transform
- * directly on a clipped element layer-promotes it in Chromium and the
- * gradient text stops painting entirely — keep the two separated. */
-.word-cycle-item {
-  grid-area: 1 / 1;
-  justify-self: center;
-  white-space: nowrap;
-  opacity: 0; /* idle phrases stay hidden; the in/out classes animate the rest */
-}
-/* Incoming waits for the outgoing phrase to fully clear (360ms exit + a
- * small beat) before entering — a clean two-step swap, the two phrases
- * never overlap or read as mush. */
-.word-cycle-in {
-  animation: wordCycleIn 520ms cubic-bezier(0.16, 1, 0.3, 1) 420ms both;
-}
-/* Outgoing: shorter, accelerating exit — it gets out of the way first. */
-.word-cycle-out {
-  animation: wordCycleOut 360ms cubic-bezier(0.55, 0.055, 0.675, 0.19) both;
 }
 
-/* Reduced motion: kill every looping/entrance animation in this section.
- * The word-cycle hook never starts under reduced motion, so the first
- * (canonical) phrase is the one shown statically. */
+/* Width steps — target is the 1445px design width plus ~90px of breathing room. */
+@media (min-width: 1024px) and (max-width: 1535px) {
+  .lp-page {
+    --lp-zw: 0.93;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1400px) {
+  .lp-page {
+    --lp-zw: 0.88;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1330px) {
+  .lp-page {
+    --lp-zw: 0.82;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1260px) {
+  .lp-page {
+    --lp-zw: 0.77;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1180px) {
+  .lp-page {
+    --lp-zw: 0.72;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1100px) {
+  .lp-page {
+    --lp-zw: 0.66;
+  }
+}
+
+/* Height steps — keeps the single-screen hero on one screen. */
+@media (min-width: 1024px) and (max-height: 1010px) {
+  .lp-page {
+    --lp-zh: 0.93;
+  }
+}
+@media (min-width: 1024px) and (max-height: 950px) {
+  .lp-page {
+    --lp-zh: 0.87;
+  }
+}
+@media (min-width: 1024px) and (max-height: 880px) {
+  .lp-page {
+    --lp-zh: 0.81;
+  }
+}
+@media (min-width: 1024px) and (max-height: 820px) {
+  .lp-page {
+    --lp-zh: 0.75;
+  }
+}
+@media (min-width: 1024px) and (max-height: 760px) {
+  .lp-page {
+    --lp-zh: 0.69;
+  }
+}
+@media (min-width: 1024px) and (max-height: 700px) {
+  .lp-page {
+    --lp-zh: 0.63;
+  }
+}
+@media (min-width: 1024px) and (max-height: 640px) {
+  .lp-page {
+    --lp-zh: 0.57;
+  }
+}
+
+/* Handwritten margin notes flanking the two phones. */
+.lp-hand {
+  font-family: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+  font-weight: 600;
+}
+
+/* Staggered entrance for the composition. `backwards` (not `both`) so no
+ * filled transform lingers to make these elements permanent stacking
+ * contexts once they've landed. */
+@keyframes lpIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lp-in {
+  animation: lpIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Live-call waveform: a shallow breathe, so the bar pattern the design
+ * specifies stays readable rather than turning into a dancing equalizer. */
+@keyframes lpBar {
+  0%,
+  100% {
+    transform: scaleY(0.82);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.lp-bar {
+  transform-origin: 50% 50%;
+  animation: lpBar 1.5s ease-in-out infinite;
+  animation-delay: var(--lp-delay, 0s);
+}
+
+/* Expanding halo behind the unanswered call button. */
+@keyframes lpRing {
+  0% {
+    transform: scale(0.86);
+    opacity: 0.5;
+  }
+  70%,
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+.lp-ring {
+  animation: lpRing 2.8s ease-out infinite;
+}
+
+/* "Live call" status dot. */
+@keyframes lpPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.lp-pulse {
+  animation: lpPulse 1.8s ease-in-out infinite;
+}
+
+/* Outcome chips drift out of phase with each other. */
+@keyframes lpFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.lp-float {
+  animation: lpFloat 6.5s ease-in-out infinite;
+  animation-delay: var(--lp-delay, 0s);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hw-word,
-  .hw-payoff,
-  .lp-drift,
-  .lp-dot,
-  .eq-bar {
+  .lp-in,
+  .lp-bar,
+  .lp-ring,
+  .lp-pulse,
+  .lp-float {
     animation: none;
   }
-  .hw-payoff {
-    background-position: 35% 50%;
-  }
-  .word-cycle-item {
-    animation: none !important;
-  }
-  .word-cycle-item:first-child {
+  .lp-in {
     opacity: 1;
+    transform: none;
   }
 }
-
-/* Desktop is scroll-free (root locks to 100vh), so on shorter viewports the
- * whole hero composition steps down via zoom — layout-level scaling, text
- * stays crisp. Thresholds cover common laptop heights. */
-@media (min-width: 1024px) and (max-height: 820px) {
-  .lp-hero {
-    zoom: 0.9;
-  }
-}
-@media (min-width: 1024px) and (max-height: 720px) {
-  .lp-hero {
-    zoom: 0.8;
-  }
-}
-@media (min-width: 1024px) and (max-height: 630px) {
-  .lp-hero {
-    zoom: 0.7;
-  }
-}
-
