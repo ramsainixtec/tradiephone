@@ -51,7 +51,7 @@ export const useBrandingStore = create<BrandingState>()(
       },
     }),
     {
-      name: "hello22_branding",
+      name: "tradiephone_branding",
       onRehydrateStorage: () => (state) => {
         if (state?.assets.favicon) applyFavicon(state.assets.favicon);
       },

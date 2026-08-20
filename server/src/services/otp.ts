@@ -192,12 +192,12 @@ export async function sendOtpSms(
   // what it's for. Verification codes read best as "<code> is your … code".
   const purposeLine =
     purpose === "signup"
-      ? "Enter it to finish creating your hello22.ai account."
-      : "Enter it to reset your hello22.ai password.";
+      ? "Enter it to finish creating your tradiephone.ai account."
+      : "Enter it to reset your tradiephone.ai password.";
   try {
     await sendSms(
       to,
-      `${code} is your hello22.ai verification code. ${purposeLine} It expires in ${CODE_TTL_MIN} minutes.`,
+      `${code} is your tradiephone.ai verification code. ${purposeLine} It expires in ${CODE_TTL_MIN} minutes.`,
     );
   } catch (err) {
     // Swallow — the emailed code still works; just record it for ops.

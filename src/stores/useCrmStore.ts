@@ -73,6 +73,6 @@ export const useCrmStore = create<CrmState>()(
       },
       reset: () => set({ crm: DEFAULT_CRM }),
     }),
-    { name: "hello22_crm" },
+    { name: "tradiephone_crm" },
   ),
 );

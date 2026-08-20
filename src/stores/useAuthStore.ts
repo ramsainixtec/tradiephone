@@ -211,7 +211,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "hello22_auth",
+      name: "tradiephone_auth",
       // Persist the user + any active impersonation so a reload keeps the
       // "viewing as" session (status is derived on load via loadMe()).
       partialize: (s) => ({ user: s.user, impersonator: s.impersonator }),

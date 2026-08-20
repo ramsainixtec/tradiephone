@@ -13,7 +13,7 @@ export function DashboardPreview() {
         <span className="size-2.5 rounded-full bg-[#FEBC2E]" />
         <span className="size-2.5 rounded-full bg-[#28C840]" />
         <span className="ml-2 inline-flex items-center gap-1.5 rounded-md bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-          <PhoneCall className="size-3 text-primary" /> hello22.ai / dashboard
+          <PhoneCall className="size-3 text-primary" /> tradiephone.ai / dashboard
         </span>
       </div>
 
@@ -24,7 +24,7 @@ export function DashboardPreview() {
             <span className="flex size-5 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <PhoneCall className="size-3" />
             </span>
-            hello22
+            Tradie Phone
           </div>
           {[
             { icon: LayoutDashboard, label: "Dashboard", active: true },

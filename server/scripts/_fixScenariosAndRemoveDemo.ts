@@ -3,14 +3,14 @@ import { PrismaClient } from "@prisma/client";
 
 /** One-off, user-requested:
  *  1. Capitalize scenario If/Then first letters for the two named accounts
- *     (michaelbt8699@gmail.com, admin@hello22.ai) — the only ones still lowercase.
- *  2. Delete the demo@hello22.ai account entirely (no longer wanted). Prisma
+ *     (michaelbt8699@gmail.com, admin@tradiephone.ai) — the only ones still lowercase.
+ *  2. Delete the demo@tradiephone.ai account entirely (no longer wanted). Prisma
  *     cascades remove its profile, conversion + call logs, CRM row, and
  *     notifications. */
 const prisma = new PrismaClient();
 
-const TARGET_EMAILS = ["michaelbt8699@gmail.com", "admin@hello22.ai"];
-const DEMO_EMAIL = "demo@hello22.ai";
+const TARGET_EMAILS = ["michaelbt8699@gmail.com", "admin@tradiephone.ai"];
+const DEMO_EMAIL = "demo@tradiephone.ai";
 
 const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 

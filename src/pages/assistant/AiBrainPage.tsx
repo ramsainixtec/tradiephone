@@ -55,7 +55,7 @@ function isSectionComplete(key: AgentSectionKey, c: AgentConfig): boolean {
 
 /** "This account has opened the assistant tester" — per account id, so an admin
  *  who impersonates a customer gets that workspace's own nudge, not theirs. */
-const testerSeenKey = (accountId: string) => `hello22_tester_seen:${accountId || "me"}`;
+const testerSeenKey = (accountId: string) => `tradiephone_tester_seen:${accountId || "me"}`;
 
 export default function AiBrainPage() {
   const [active, setActive] = useState<AgentSectionKey>("identity");

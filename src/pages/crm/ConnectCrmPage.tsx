@@ -48,7 +48,7 @@ import { ProviderCard } from "./ProviderCard";
 import { EmptyArt, ProviderFlowArt } from "./illustrations";
 
 // Cache the last-known entitlement so the lock state doesn't flicker on reload.
-const CUSTOM_CRM_CACHE_KEY = "hello22_custom_crm_allowed";
+const CUSTOM_CRM_CACHE_KEY = "tradiephone_custom_crm_allowed";
 
 export default function ConnectCrmPage() {
   const crm = useCrmStore((s) => s.crm);
@@ -387,7 +387,7 @@ function ContactAdmin({
           <Button
             variant="primary"
             onClick={() => {
-              window.location.href = `mailto:connect@hello22.ai?subject=${encodeURIComponent(
+              window.location.href = `mailto:connect@tradiephone.ai?subject=${encodeURIComponent(
                 subject,
               )}`;
             }}

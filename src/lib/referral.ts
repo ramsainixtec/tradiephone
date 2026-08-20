@@ -1,7 +1,7 @@
 /* Referral attribution — capture a reseller's ?ref=CODE at landing and
  * carry it through to sign-up so the customer is linked to the reseller. */
 
-const REF_KEY = "hello22_ref";
+const REF_KEY = "tradiephone_ref";
 
 /** Read ?ref=CODE from the current URL and persist it (called once on app load). */
 export function captureReferralFromUrl() {

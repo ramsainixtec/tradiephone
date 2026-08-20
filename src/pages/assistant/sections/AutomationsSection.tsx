@@ -94,7 +94,7 @@ export function automationContactErrors(
 
 type Channels = { email: boolean; sms: boolean; whatsapp: boolean };
 
-const CHANNELS_CACHE_KEY = "hello22_summary_channels";
+const CHANNELS_CACHE_KEY = "tradiephone_summary_channels";
 // Optimistically assume every channel is available until the backend answers,
 // so an already-activated channel never flashes as locked (below the upgrade
 // strip) and then jump above it once the fetch resolves.

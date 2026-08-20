@@ -580,7 +580,7 @@ function SupportCard({ className }: { className?: string }) {
           icon={BookOpen}
           label="Documentation"
           description="Guides, FAQs and best practices"
-          href="https://www.hello22.ai/#faq"
+          href="https://www.tradiephone.ai/#faq"
           external
         />
         <SettingsRow

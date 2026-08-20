@@ -36,7 +36,7 @@ function transport(): Transporter {
 }
 
 function fromAddress(): string {
-  return getEffective("smtp.from") || "hello22.ai <support@hello22.ai>";
+  return getEffective("smtp.from") || "tradiephone.ai <support@tradiephone.ai>";
 }
 
 /** Inbox that receives support-chat handoffs: the dedicated setting when set,

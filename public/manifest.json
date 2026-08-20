@@ -1,6 +1,6 @@
 {
-  "name": "hello22.ai — Voice Receptionist",
-  "short_name": "hello22",
+  "name": "tradiephone.ai — Voice Receptionist",
+  "short_name": "Tradie Phone",
   "description": "24/7 AI Voice Receptionist Dashboard",
   "start_url": "/dashboard",
   "display": "standalone",

@@ -122,7 +122,7 @@ export const useQuickSetupStore = create<QuickSetupState>()(
       resetDismiss: () => set({ dismissed: false, open: false, step: 1 }),
     }),
     {
-      name: "hello22_quick_setup",
+      name: "tradiephone_quick_setup",
       // Persist long-lived flags + the dismissal so a refresh doesn't reopen the
       // wizard. The dismissal is cleared on each login (see useAuthStore) so it
       // shows again next time the user signs in until they complete it.

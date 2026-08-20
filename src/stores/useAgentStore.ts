@@ -321,7 +321,7 @@ export const useAgentStore = create<AgentState>()(
         set({ config: DEFAULT_AGENT_CONFIG, savedConfig: DEFAULT_AGENT_CONFIG, dirty: false, dirtySections: [], contextBaseline: null, lastSyncedAt: new Date().toISOString(), syncFailed: false, promptTemplateIsLatest: true }),
     }),
     {
-      name: "hello22_agent_config",
+      name: "tradiephone_agent_config",
       version: 1,
       // v0 → v1: owner call-summary channels became on-by-default. Flip them on
       // once for existing users so their summaries start delivering to the account

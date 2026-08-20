@@ -216,7 +216,7 @@ export default function LandingPage() {
                 <PhoneCall className="size-5" />
               </span>
               <span className="text-[17px]">
-                hello22<span className="text-primary">.ai</span>
+                tradiephone<span className="text-primary">.ai</span>
               </span>
             </BrandLogo>
           </Link>

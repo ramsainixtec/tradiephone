@@ -36,7 +36,7 @@ export const useUiStore = create<UiState>()(
       setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
     }),
     {
-      name: "hello22_ui",
+      name: "tradiephone_ui",
       onRehydrateStorage: () => (state) => {
         if (state) applyThemeClass(state.themeMode);
       },
