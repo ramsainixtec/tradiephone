@@ -75,7 +75,7 @@ export const useTourStore = create<TourState>()(
       resetTour: () => set({ completed: false, active: false, currentStep: 0 }),
     }),
     {
-      name: "hello22_tour",
+      name: "tradiephone_tour",
       // Only remember whether the tour was finished — `active`/`currentStep` are
       // session state and must not survive a reload (else it reopens on its own,
       // even over the Quick Setup wizard).

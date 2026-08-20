@@ -25,7 +25,7 @@ function arg(name: string): string | undefined {
 }
 
 async function main() {
-  const email = (arg("email") ?? process.env.SEED_ADMIN_EMAIL ?? "admin@hello22.ai").trim();
+  const email = (arg("email") ?? process.env.SEED_ADMIN_EMAIL ?? "admin@tradiephone.ai").trim();
   const password = arg("password") ?? process.env.SEED_ADMIN_PASSWORD ?? "Admin@12345";
   const fullName = arg("name") ?? process.env.SEED_ADMIN_NAME ?? "Admin";
 
@@ -50,7 +50,7 @@ async function main() {
         // A pre-existing user (e.g. a STAFF/RESELLER account) may have no customer
         // rows. ADMIN is customer-facing, so backfill any missing ones — without
         // them GET /api/profile 404s and the AI Brain page hangs on a skeleton.
-        ...(existing.profile ? {} : { profile: { create: { businessName: "hello22.ai" } } }),
+        ...(existing.profile ? {} : { profile: { create: { businessName: "tradiephone.ai" } } }),
         ...(existing.crm ? {} : { crm: { create: {} } }),
         ...(existing.conversion
           ? {}
@@ -74,7 +74,7 @@ async function main() {
         passwordHash,
         // No receptionistNumber — the admin draws a real pool number when they
         // first save their AI Brain (provisioning treats "" as "needs a number").
-        profile: { create: { businessName: "hello22.ai" } },
+        profile: { create: { businessName: "tradiephone.ai" } },
         crm: { create: {} },
         conversion: {
           create: {

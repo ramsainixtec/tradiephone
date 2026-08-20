@@ -1,5 +1,5 @@
 {
-  "name": "hello22",
+  "name": "tradiephone",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
+    "white-label": "node tools/white-label/cli.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -64,6 +65,7 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "white-label": "file:tools/white-label"
   }
 }

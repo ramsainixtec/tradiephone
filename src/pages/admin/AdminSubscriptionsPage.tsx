@@ -284,7 +284,7 @@ function contactHref(s: RiskSubject): string {
   let body =
     `Hi ${firstName},\n\n` +
     `Just checking in on how your AI receptionist is going. If there's anything we can help with, reply to this email.\n\n` +
-    `Best,\nThe hello22.ai team`;
+    `Best,\nThe tradiephone.ai team`;
 
   if (s.underOnboarding) {
     subject = "Finish setting up your AI receptionist";
@@ -292,14 +292,14 @@ function contactHref(s: RiskSubject): string {
       `Hi ${firstName},\n\n` +
       `You're only a couple of steps away from having your AI receptionist answering calls. ` +
       `Pick up where you left off and you'll be live in minutes — or reply to this email and we'll walk you through it.\n\n` +
-      `Best,\nThe hello22.ai team`;
+      `Best,\nThe tradiephone.ai team`;
   } else if (risk?.reason === "canceled") {
     subject = "We'd love to have you back";
     body =
       `Hi ${firstName},\n\n` +
       `We noticed your subscription ended and we'd love to have you back. Was there something that didn't work for you? ` +
       `If anything fell short, reply and tell us — we read every answer and we'd love a chance to make it right.\n\n` +
-      `Best,\nThe hello22.ai team`;
+      `Best,\nThe tradiephone.ai team`;
   } else if (risk?.reason === "past_due") {
     subject = "Your payment didn't go through";
     body =
@@ -307,21 +307,21 @@ function contactHref(s: RiskSubject): string {
       `Your last payment didn't go through, so your AI receptionist is at risk of pausing. ` +
       `Updating your card only takes a minute — sign in and head to Settings → Billing to fix it.\n\n` +
       `If anything's unclear, just reply to this email and we'll help.\n\n` +
-      `Best,\nThe hello22.ai team`;
+      `Best,\nThe tradiephone.ai team`;
   } else if (risk?.reason === "cancel_scheduled") {
     subject = "Before your plan ends — anything we can fix?";
     body =
       `Hi ${firstName},\n\n` +
       `We saw you've canceled${s.planName ? ` your ${s.planName} plan` : ""} — it stays active until the end of the period, so nothing changes yet. ` +
       `Before it lapses: was there something that didn't work for you? Reply and tell us — if we can fix it, we will, and you can turn auto-renew back on any time from Plans & Billing.\n\n` +
-      `Best,\nThe hello22.ai team`;
+      `Best,\nThe tradiephone.ai team`;
   } else if (risk?.reason === "downgrade") {
     subject = "Is something missing from your plan?";
     body =
       `Hi ${firstName},\n\n` +
       `We saw you scheduled a move to a smaller plan. Is something missing from ${s.planName ?? "your current plan"}? ` +
       `If there's a feature you need or the pricing isn't sitting right, reply and let us know — we may be able to help before the change kicks in.\n\n` +
-      `Best,\nThe hello22.ai team`;
+      `Best,\nThe tradiephone.ai team`;
   }
 
   return `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

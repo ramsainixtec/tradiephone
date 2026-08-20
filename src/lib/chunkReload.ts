@@ -9,7 +9,7 @@
  * ErrorBoundary's "Reload" fallback instead.
  */
 
-const RELOAD_FLAG = "hello22:chunk-reloaded";
+const RELOAD_FLAG = "tradiephone:chunk-reloaded";
 
 /** Heuristic: a stale dynamic-import / chunk-load failure (post-deploy). */
 export function isChunkLoadError(err: unknown): boolean {
@@ -47,7 +47,7 @@ export function clearChunkReloadGuard(): void {
  *  match the one in index.html. */
 export function clearBootReloadGuard(): void {
   try {
-    sessionStorage.removeItem("hello22:boot-reloaded");
+    sessionStorage.removeItem("tradiephone:boot-reloaded");
   } catch {
     /* ignore */
   }

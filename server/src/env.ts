@@ -11,7 +11,7 @@ const schema = z.object({
   // IP. Wrong-too-low → everyone shares the proxy's IP (per-IP rate limits become
   // global); wrong-too-high → clients can spoof. Override only if infra adds hops.
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(1),
-  // Public base URL of the customer-facing app (e.g. https://agent.hello22.ai).
+  // Public base URL of the customer-facing app (e.g. https://agent.tradiephone.ai).
   // Used to build login links in account emails (staff/reseller credentials).
   // Falls back to the first CORS origin, then the production URL, so the link is
   // never broken even if this is unset.
@@ -33,7 +33,7 @@ const schema = z.object({
   // WhatsApp webhook callback URL in admin. Falls back to VAPI_SERVER_URL.
   PUBLIC_API_URL: z.string().optional().default(""),
   // Host used to build the "More info" conversation link in the summary SMS.
-  // Set this to a brand/short domain (e.g. https://agent.hello22.ai) that proxies
+  // Set this to a brand/short domain (e.g. https://agent.tradiephone.ai) that proxies
   // /c/* to this API, so the SMS shows the brand domain instead of the api host.
   // Blank → falls back to PUBLIC_API_URL (the raw API host).
   SHARE_LINK_BASE_URL: z.string().optional().default(""),
@@ -48,7 +48,7 @@ const schema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().optional().default(""),
   SMTP_PASS: z.string().optional().default(""),
-  SMTP_FROM: z.string().default("hello22.ai <support@hello22.ai>"),
+  SMTP_FROM: z.string().default("tradiephone.ai <support@tradiephone.ai>"),
   // Inbox that receives support-chat handoff emails (blank = SMTP_FROM address).
   SUPPORT_INBOX_EMAIL: z.string().optional().default(""),
 
@@ -93,7 +93,7 @@ export const corsOrigins = env.CORS_ORIGIN.split(",").map((s) => s.trim());
 /** Public base URL of the customer-facing app (no trailing slash), for login
  *  links in emails. Prefers APP_URL, then the first CORS origin, then the
  *  production URL — guaranteed non-empty so emails always carry a working link. */
-export const appBaseUrl = (env.APP_URL || corsOrigins[0] || "https://agent.hello22.ai").replace(
+export const appBaseUrl = (env.APP_URL || corsOrigins[0] || "https://agent.tradiephone.ai").replace(
   /\/$/,
   "",
 );

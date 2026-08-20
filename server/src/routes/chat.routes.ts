@@ -12,7 +12,7 @@ const router = express.Router();
 router.use(requireAuth);
 
 const WELCOME_MESSAGE =
-  "Hi! 👋 I'm the hello22.ai support assistant. How can I help you set up your AI receptionist?";
+  "Hi! 👋 I'm the tradiephone.ai support assistant. How can I help you set up your AI receptionist?";
 
 /** Find (or create) the user's chat conversation, with messages ordered oldest-first. */
 async function getOrCreateConversation(

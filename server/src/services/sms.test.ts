@@ -7,10 +7,10 @@ describe("buildCallSummarySms", () => {
       callerName: "Jane Doe",
       callerNumber: "+61400111222",
       purpose: "Booking a haircut",
-      conversationUrl: "https://agent.hello22.ai/c/Xa7bK2p9",
+      conversationUrl: "https://agent.tradiephone.ai/c/Xa7bK2p9",
     });
     expect(body).toBe(
-      "Caller: Jane Doe (+61400111222)\nPurpose: Booking a haircut\nMore info: https://agent.hello22.ai/c/Xa7bK2p9",
+      "Caller: Jane Doe (+61400111222)\nPurpose: Booking a haircut\nMore info: https://agent.tradiephone.ai/c/Xa7bK2p9",
     );
     expect(body.length).toBeLessThanOrEqual(160);
   });
@@ -24,7 +24,7 @@ describe("buildCallSummarySms", () => {
       callerName: "Robert",
       callerNumber: "+61400111222",
       summary: long, // no explicit purpose → falls back to the summary
-      conversationUrl: "https://agent.hello22.ai/c/Xa7bK2p9",
+      conversationUrl: "https://agent.tradiephone.ai/c/Xa7bK2p9",
     });
     expect(body.length).toBeLessThanOrEqual(160);
     expect(body.endsWith("...")).toBe(false);
@@ -34,7 +34,7 @@ describe("buildCallSummarySms", () => {
   });
 
   it("never truncates the link, even with a long name and purpose", () => {
-    const url = "https://agent.hello22.ai/c/Xa7bK2p9";
+    const url = "https://agent.tradiephone.ai/c/Xa7bK2p9";
     const body = buildCallSummarySms({
       callerName: "Alexander Bartholomew",
       purpose:
@@ -52,7 +52,7 @@ describe("buildCallSummarySms", () => {
     const body = buildCallSummarySms({
       callerName: "Priya",
       purpose,
-      conversationUrl: "https://agent.hello22.ai/c/Xa7bK2p9",
+      conversationUrl: "https://agent.tradiephone.ai/c/Xa7bK2p9",
     });
     expect(body.length).toBeLessThanOrEqual(160);
     const purposeLine = body.split("\n").find((l) => l.startsWith("Purpose:"))!;
@@ -73,9 +73,9 @@ describe("buildCallSummarySms", () => {
   it("omits the purpose line when there's nothing to say", () => {
     const body = buildCallSummarySms({
       callerName: "Sam",
-      conversationUrl: "https://agent.hello22.ai/c/Xa7bK2p9",
+      conversationUrl: "https://agent.tradiephone.ai/c/Xa7bK2p9",
     });
-    expect(body).toBe("Caller: Sam\nMore info: https://agent.hello22.ai/c/Xa7bK2p9");
+    expect(body).toBe("Caller: Sam\nMore info: https://agent.tradiephone.ai/c/Xa7bK2p9");
     expect(body).not.toContain("Purpose:");
   });
 

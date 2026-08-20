@@ -28,7 +28,7 @@ vi.mock("@/lib/api", () => ({
   setToken: vi.fn(),
   getToken: vi.fn(() => null),
   markSessionActive: vi.fn(),
-  TOKEN_KEY: "hello22_token",
+  TOKEN_KEY: "tradiephone_token",
 }));
 vi.mock("@/lib/referral", () => ({ getReferralCode: () => "", clearReferralCode: vi.fn() }));
 vi.mock("@/lib/resetUserStores", () => ({ resetUserStores: vi.fn() }));

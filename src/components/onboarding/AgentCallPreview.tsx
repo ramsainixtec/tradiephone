@@ -95,7 +95,7 @@ function SmsCard({ businessName, mobile, service }: { businessName: string; mobi
 
       <div className="mt-4 flex">
         <p className="max-w-[88%] rounded-2xl rounded-tl-sm bg-muted px-3.5 py-2.5 text-sm text-foreground">
-          <span className="font-semibold">hello22</span> · 📞 New call for {businessName}. Caller asked about{" "}
+          <span className="font-semibold">Tradie Phone</span> · 📞 New call for {businessName}. Caller asked about{" "}
           {service ?? "your services"} — I saved their name &amp; number. Tap to view.
         </p>
       </div>

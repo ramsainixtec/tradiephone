@@ -275,11 +275,11 @@ router.post(
     try {
       await sendEmail({
         to: recipient,
-        subject: "hello22.ai — test email ✅",
+        subject: "tradiephone.ai — test email ✅",
         html:
-          `<p>This is a test email from <strong>hello22.ai</strong>.</p>` +
+          `<p>This is a test email from <strong>tradiephone.ai</strong>.</p>` +
           `<p>If you're reading this, your SMTP settings are working correctly. 🎉</p>`,
-        text: "Test email from hello22.ai — if you're reading this, your SMTP settings work.",
+        text: "Test email from tradiephone.ai — if you're reading this, your SMTP settings work.",
       });
       res.json({ success: true, to: recipient });
     } catch (e) {
@@ -1593,10 +1593,10 @@ async function emailResellerWelcome(opts: {
   const loginUrl = `${appBaseUrl}/login`;
   await sendEmail({
     to: opts.email,
-    subject: "Your hello22.ai reseller account",
+    subject: "Your tradiephone.ai reseller account",
     html:
       `<p>Hi ${escapeHtml(opts.fullName)},</p>` +
-      `<p>A reseller account has been created for you on hello22.ai. Use these credentials to log in:</p>` +
+      `<p>A reseller account has been created for you on tradiephone.ai. Use these credentials to log in:</p>` +
       `<ul>` +
       `<li><strong>Email:</strong> ${escapeHtml(opts.email)}</li>` +
       `<li><strong>Password:</strong> ${escapeHtml(opts.password)}</li>` +
@@ -1606,7 +1606,7 @@ async function emailResellerWelcome(opts: {
       `<p>For your security, please change your password after your first login.</p>`,
     text:
       `Hi ${opts.fullName},\n\n` +
-      `A reseller account has been created for you on hello22.ai.\n\n` +
+      `A reseller account has been created for you on tradiephone.ai.\n\n` +
       `Email: ${opts.email}\nPassword: ${opts.password}\nReferral code: ${opts.referralCode}\n\n` +
       `Log in: ${loginUrl}\n\nPlease change your password after your first login.`,
   });
@@ -4035,7 +4035,7 @@ function sampleEmailVars(recipient: string): Record<string, string> {
     cta: "Top up or upgrade your plan to keep your AI receptionist answering.",
     caller_name: "John Carter",
     summary_block: "AI summary\nCaller asked about weekend availability and left a callback number.",
-    recording_block: "Recording: https://app.hello22.ai/recording/sample",
+    recording_block: "Recording: https://app.tradiephone.ai/recording/sample",
     transcript_block: "Transcript\nAI: Thanks for calling. How can I help?\nCaller: I'd like to book a job.",
     password: "Temp1234!",
     permissions: "Customers (View, Edit), Calls (View)",

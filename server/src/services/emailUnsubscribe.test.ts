@@ -38,8 +38,8 @@ vi.mock("./settings.js", () => ({
   integrationsStatus: () => ({ email: true }),
   getEffective: (key: string) => {
     const map: Record<string, string> = {
-      "branding.appName": "Hello22",
-      "smtp.from": "Hello22 <support@hello22.ai>",
+      "branding.appName": "Tradie Phone",
+      "smtp.from": "Tradie Phone <support@tradiephone.ai>",
       "smtp.host": "smtp.test",
       "smtp.port": "587",
       "smtp.user": "u",

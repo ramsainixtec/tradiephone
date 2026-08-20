@@ -22,7 +22,7 @@ export interface PlanFeatureRow {
 /** Shared cache of the plan-entitlement response, written by whichever screen
  *  fetched it last. Read synchronously so gated UI (the SMS to Caller nav badge,
  *  its locked state) renders correctly on first paint instead of flashing. */
-export const ENTITLEMENTS_CACHE_KEY = "hello22_summary_channels";
+export const ENTITLEMENTS_CACHE_KEY = "tradiephone_summary_channels";
 
 /** Is "SMS to Caller" included, per the last known entitlement response?
  *

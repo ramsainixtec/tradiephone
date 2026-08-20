@@ -1,4 +1,4 @@
-# Features & Improvements — hello22.ai
+# Features & Improvements — tradiephone.ai
 
 ## Authentication & Security
 1. OTP-based registration flow — email verification with OTP input during signup

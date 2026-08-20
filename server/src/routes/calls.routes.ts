@@ -110,7 +110,7 @@ function recordingFilename(callerName: string, createdAt: Date, contentType: str
     .slice(0, 40)
     .toLowerCase();
   const stamp = createdAt.toISOString().slice(0, 16).replace("T", "-").replace(":", "");
-  return ["hello22-call", who, stamp].filter(Boolean).join("-") + `.${audioExtFor(contentType)}`;
+  return ["tradiephone-call", who, stamp].filter(Boolean).join("-") + `.${audioExtFor(contentType)}`;
 }
 
 /** Readable "Role: text" transcript. Vapi phone calls send a plain string; the

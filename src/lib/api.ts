@@ -38,7 +38,7 @@ import type {
  *  Typed API client. Talks to the Express backend with a Bearer token.
  * ------------------------------------------------------------------ */
 
-export const TOKEN_KEY = "hello22_token";
+export const TOKEN_KEY = "tradiephone_token";
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);

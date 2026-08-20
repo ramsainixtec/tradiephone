@@ -130,6 +130,6 @@ export const useProfileStore = create<ProfileState>()(
       isPremium: () => get().profile.plan === "premium",
       reset: () => set({ profile: DEFAULT_PROFILE }),
     }),
-    { name: "hello22_profile" },
+    { name: "tradiephone_profile" },
   ),
 );

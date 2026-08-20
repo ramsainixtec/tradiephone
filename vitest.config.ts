@@ -2,10 +2,11 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 
-// Two test projects so component tests get a DOM without disturbing the
+// Three test projects so component tests get a DOM without disturbing the
 // existing node-env logic tests:
-//   • node — pure logic (*.test.ts), unchanged from before.
-//   • dom  — React component tests (*.test.tsx) under jsdom + Testing Library.
+//   • node  — pure logic (*.test.ts), unchanged from before.
+//   • dom   — React component tests (*.test.tsx) under jsdom + Testing Library.
+//   • tools — repo tooling that ships as plain ESM (tools/**/*.test.mjs).
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -30,6 +31,14 @@ export default defineConfig({
           environment: "jsdom",
           include: ["src/**/*.test.tsx"],
           setupFiles: ["./vitest.setup.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "tools",
+          environment: "node",
+          include: ["tools/**/*.test.mjs"],
         },
       },
     ],

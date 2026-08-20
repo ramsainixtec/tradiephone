@@ -517,7 +517,7 @@ export const PROVIDER_DEFS: ProviderDef[] = [
   /* ------------------------------ Internal ---------------------------- */
   {
     id: "self",
-    name: "hello22 API",
+    name: "Tradie Phone API",
     category: "monitoring",
     blurb: "The API this platform serves to its own apps",
     wired: true,

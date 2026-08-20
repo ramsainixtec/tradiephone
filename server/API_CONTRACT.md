@@ -1,4 +1,4 @@
-# API Contract — hello22.ai
+# API Contract — tradiephone.ai
 
 Base URL: `${VITE_API_URL}` → mounted at `/api`. All JSON. Auth via `Authorization: Bearer <jwt>`.
 Errors: `{ error: string, details?: unknown }` with appropriate HTTP status.

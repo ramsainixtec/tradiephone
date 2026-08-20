@@ -264,7 +264,7 @@ describe("GET /recording-file/:token?download=1 — filename", () => {
   it("attaches a readable filename when download=1", async () => {
     serveAudio("Browser Test", "2026-08-07T07:46:00.000Z");
     expect(await disposition("?download=1")).toBe(
-      'attachment; filename="hello22-call-browser-test-2026-08-07-0746.wav"',
+      'attachment; filename="tradiephone-call-browser-test-2026-08-07-0746.wav"',
     );
   });
 
@@ -272,14 +272,14 @@ describe("GET /recording-file/:token?download=1 — filename", () => {
     // A quote would terminate the header value; a slash would look like a path.
     serveAudio('Bad"/\\Name', "2026-08-07T07:46:00.000Z");
     const d = await disposition("?download=1");
-    expect(d).toBe('attachment; filename="hello22-call-bad-name-2026-08-07-0746.wav"');
+    expect(d).toBe('attachment; filename="tradiephone-call-bad-name-2026-08-07-0746.wav"');
     expect(d).not.toContain('\\');
   });
 
   it("falls back to just the date when the name has no usable characters", async () => {
     serveAudio("नेपाली", "2026-08-07T07:46:00.000Z");
     expect(await disposition("?download=1")).toBe(
-      'attachment; filename="hello22-call-2026-08-07-0746.wav"',
+      'attachment; filename="tradiephone-call-2026-08-07-0746.wav"',
     );
   });
 

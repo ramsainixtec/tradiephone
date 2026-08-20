@@ -72,7 +72,7 @@ export async function buildUserDigest(userId: string): Promise<UserDigest | null
     : "";
 
   const html =
-    `<h2>Your weekly hello22.ai digest</h2>` +
+    `<h2>Your weekly tradiephone.ai digest</h2>` +
     `<p>Hi ${user.fullName}, here's how your AI receptionist did for ${businessName} this week:</p>` +
     `<ul>` +
     `<li><b>${callsHandled}</b> calls handled</li>` +
@@ -83,7 +83,7 @@ export async function buildUserDigest(userId: string): Promise<UserDigest | null
     (intentRows ? `<p><b>Top topics:</b></p>${intentRows}` : "") +
     `<p>Log in to your dashboard for the full picture.</p>`;
 
-  return { subject: `Your weekly hello22.ai digest — ${callsHandled} calls`, html, stats };
+  return { subject: `Your weekly tradiephone.ai digest — ${callsHandled} calls`, html, stats };
 }
 
 /**

@@ -255,7 +255,7 @@ async function createUser(data: {
   });
   void notify(user.id, {
     type: "agent",
-    title: "Welcome to hello22.ai",
+    title: "Welcome to tradiephone.ai",
     message: "Your dashboard is ready. Explore the AI Brain to customize your assistant.",
     link: "/dashboard/assistant",
   });

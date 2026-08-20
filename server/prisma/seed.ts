@@ -91,7 +91,7 @@ const DEFAULT_PLANS = [
 
 /** Seed the admin + demo user (idempotent — safe to run repeatedly). */
 export async function seed() {
-  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@hello22.ai";
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@tradiephone.ai";
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "Admin@123123";
   const adminName = process.env.SEED_ADMIN_NAME ?? "Admin";
 
@@ -104,7 +104,7 @@ export async function seed() {
       fullName: adminName,
       role: "ADMIN",
       passwordHash: await hpw(adminPassword),
-      profile: { create: { businessName: "hello22.ai" } },
+      profile: { create: { businessName: "tradiephone.ai" } },
       crm: { create: {} },
       conversion: {
         create: {
