@@ -25,6 +25,10 @@ interface ProfileState {
    *  purpose: the file is written by POST /profile/avatar, so routing it
    *  through updateProfile() would fire a second, empty PATCH. */
   setAssistantAvatar: (url: string) => void;
+  /** Same deal for the account owner's own photo — written by
+   *  POST /profile/photo, mirrored here so the header chip and the greeting
+   *  banner update without a refetch. */
+  setProfileAvatar: (url: string) => void;
   /** Persist call-forwarding choice / confirmation. `confirmed` maps to the
    *  forwardingConfirmedAt timestamp server-side (true = now, false = clear). */
   saveForwarding: (patch: { mode?: Profile["forwardingMode"]; confirmed?: boolean }) => void;
@@ -59,6 +63,8 @@ export const useProfileStore = create<ProfileState>()(
       },
       setAssistantAvatar: (assistantAvatarUrl) =>
         set((s) => ({ profile: { ...s.profile, assistantAvatarUrl } })),
+      setProfileAvatar: (profileAvatarUrl) =>
+        set((s) => ({ profile: { ...s.profile, profileAvatarUrl } })),
       updateProfile: (patch) => {
         set((s) => ({ profile: { ...s.profile, ...patch } }));
         // The auth store backs the header greeting/chip; keep its name in sync so

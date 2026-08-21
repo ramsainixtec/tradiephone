@@ -78,3 +78,20 @@ export function uid(prefix = "id"): string {
 export function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
+
+/**
+ * Monogram for an account with no photo — the initials of the first and last
+ * name ("Jane Doe" → "JD"), or the first two letters when there's only one word.
+ * Falls back to the email's local part for accounts that never set a name, so
+ * "jane.doe@x.com" still reads "JD" rather than the domain. "U" when there's
+ * nothing at all to work with.
+ */
+export function initialsFor(name?: string | null, email?: string | null): string {
+  const raw = (name ?? "").trim() || (email ?? "").trim();
+  if (!raw) return "U";
+  const source = raw.includes("@") ? raw.split("@")[0].replace(/[._+-]+/g, " ") : raw;
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}

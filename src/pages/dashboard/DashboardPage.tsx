@@ -35,6 +35,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { PageSkeleton, Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn, formatDuration } from "@/lib/utils";
 import { DateRangePicker } from "./DateRangePicker";
 import { useCallsStore } from "@/stores/useCallsStore";
@@ -42,8 +43,6 @@ import { useAgentStore } from "@/stores/useAgentStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useProfileStore } from "@/stores/useProfileStore";
 import { useTrialStore } from "@/stores/useTrialStore";
-import { useBrandingStore } from "@/stores/useBrandingStore";
-import { avatarForVoice } from "@/data/voices";
 import { useLiveTick } from "@/hooks/useLiveData";
 import { LegendDot, MetricCard } from "./MetricCard";
 import {
@@ -250,8 +249,6 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const calls = useCallsStore((s) => s.calls);
   const assistantName = useAgentStore((s) => s.config.identity.assistantName);
-  const assistantVoiceId = useAgentStore((s) => s.config.identity.voiceId);
-  const brandAvatars = useBrandingStore((s) => s.assets);
   const tz = useAgentStore((s) => ianaTimeZone(s.config.rules.timezone));
   const user = useAuthStore((s) => s.user);
   const profile = useProfileStore((s) => s.profile);
@@ -560,7 +557,11 @@ export default function DashboardPage() {
 
         <div className="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-6 p-5 sm:p-6">
           <div className="flex min-w-0 items-center gap-4">
-            <HeroAvatar src={avatarForVoice(assistantVoiceId, brandAvatars, profile.assistantAvatarUrl)} />
+            <HeroAvatar
+              name={profile.fullName || user?.fullName}
+              email={profile.email || user?.email}
+              src={profile.profileAvatarUrl}
+            />
             <div className="min-w-0">
               <h2 className="truncate text-xl font-bold tracking-tight text-white sm:text-[1.4rem]">
                 {t("dashboard.welcome", { name: firstName })} <span aria-hidden>👋</span>
@@ -778,28 +779,29 @@ function HeroFlourish() {
   );
 }
 
-/** Greeting avatar — the assistant's configured photo.
- *  Falls back to a tinted monogram tile if the photo 404s (the source may be a
- *  remote URL, and a broken-image box in the first thing on the page is worse
- *  than no photo at all). */
-function HeroAvatar({ src }: { src: string }) {
-  const [broken, setBroken] = useState(false);
-  useEffect(() => setBroken(false), [src]);
-
+/** Greeting avatar — the ACCOUNT OWNER's photo, since the banner greets them by
+ *  name. With no upload (the state every account starts in) it renders their
+ *  name monogram, which is also the fallback if the photo 404s: the source may
+ *  be a remote URL, and a broken-image box in the first thing on the page is
+ *  worse than no photo at all. */
+function HeroAvatar({
+  name,
+  email,
+  src,
+}: {
+  name?: string | null;
+  email?: string | null;
+  src?: string | null;
+}) {
   return (
     <span className="relative inline-flex shrink-0">
-      {broken ? (
-        <span className="grid size-[4.25rem] place-items-center rounded-full bg-white/15 text-white ring-2 ring-white/70">
-          <Users className="size-7" />
-        </span>
-      ) : (
-        <img
-          src={src}
-          alt=""
-          onError={() => setBroken(true)}
-          className="size-[4.25rem] rounded-full object-cover ring-2 ring-white/70"
-        />
-      )}
+      <UserAvatar
+        name={name}
+        email={email}
+        src={src}
+        tone="on-primary"
+        className="size-[4.25rem] text-2xl ring-2 ring-white/70"
+      />
     </span>
   );
 }

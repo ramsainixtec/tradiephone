@@ -21,6 +21,9 @@ export interface Profile {
   /** Account's own AI-receptionist photo, set from Account Settings. Blank →
    *  the platform branding avatar for the voice's gender, then a stock headshot. */
   assistantAvatarUrl?: string;
+  /** The account owner's OWN photo, set from Account Settings. Blank (the
+   *  default every account starts on) → a monogram of their name. */
+  profileAvatarUrl?: string;
   plan: PlanTier;
   /** Trial usage (free plan = 10 minutes). */
   testMinutesUsed: number;

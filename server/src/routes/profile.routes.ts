@@ -233,7 +233,7 @@ router.get(
       where: { id: req.user!.sub },
       select: { email: true, fullName: true },
     });
-    const { assistantAvatarKey: _key, ...safe } = profile;
+    const { assistantAvatarKey: _key, profileAvatarKey: _pkey, ...safe } = profile;
     res.json({ ...safe, email: user?.email, fullName: user?.fullName });
   }),
 );
@@ -311,6 +311,69 @@ router.delete(
       void deleteObject(existing.assistantAvatarKey).catch(() => {});
     }
     res.json({ assistantAvatarUrl: "" });
+  }),
+);
+
+/* ---------------------------- Profile photo ------------------------------ *
+ *  The ACCOUNT OWNER's own photo (header chip, dashboard greeting banner) —
+ *  not the assistant's. Blank is the normal state: the client renders a
+ *  monogram of the owner's name, so there is nothing to provision at signup.
+ *  Same size/type rules as the assistant photo above, and the same
+ *  upload-then-delete ordering so a failed write never loses the old file.
+ * ------------------------------------------------------------------------- */
+
+router.post(
+  "/photo",
+  avatarUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!isStorageConfigured()) {
+      throw badRequest("File storage isn't configured yet — ask your admin to finish the setup.");
+    }
+    if (!req.file) throw badRequest("No file uploaded.");
+
+    const userId = req.user!.sub;
+    const existing = await prisma.profile.findUnique({
+      where: { userId },
+      select: { profileAvatarKey: true },
+    });
+
+    const { url, key } = await uploadObject(
+      `profile-avatars/${userId}`,
+      req.file.buffer,
+      req.file.mimetype,
+      req.file.originalname,
+    );
+
+    await prisma.profile.update({
+      where: { userId },
+      data: { profileAvatarUrl: url, profileAvatarKey: key },
+    });
+
+    if (existing?.profileAvatarKey) {
+      void deleteObject(existing.profileAvatarKey).catch(() => {});
+    }
+
+    res.json({ profileAvatarUrl: url });
+  }),
+);
+
+router.delete(
+  "/photo",
+  asyncHandler(async (req, res) => {
+    const userId = req.user!.sub;
+    const existing = await prisma.profile.findUnique({
+      where: { userId },
+      select: { profileAvatarKey: true },
+    });
+    await prisma.profile.update({
+      where: { userId },
+      data: { profileAvatarUrl: "", profileAvatarKey: "" },
+    });
+    if (existing?.profileAvatarKey) {
+      void deleteObject(existing.profileAvatarKey).catch(() => {});
+    }
+    // Back to the name monogram — the default every account starts on.
+    res.json({ profileAvatarUrl: "" });
   }),
 );
 
@@ -397,7 +460,7 @@ router.patch(
       where: { id: userId },
       select: { email: true, fullName: true },
     });
-    const { assistantAvatarKey: _key, ...safe } = profile;
+    const { assistantAvatarKey: _key, profileAvatarKey: _pkey, ...safe } = profile;
     res.json({ ...safe, email: user?.email, fullName: user?.fullName });
   }),
 );

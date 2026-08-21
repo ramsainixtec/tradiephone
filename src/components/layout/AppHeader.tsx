@@ -14,7 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useProfileStore } from "@/stores/useProfileStore";
 import { titleCaseName } from "@/lib/utils";
 
 function greeting(): string {
@@ -35,13 +37,6 @@ function firstName(name: string): string {
   return first;
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "U";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Admin",
   STAFF: "Staff",
@@ -58,6 +53,9 @@ function roleLabel(user: { role?: string; staffRoleName?: string | null } | null
 
 export function AppHeader() {
   const user = useAuthStore((s) => s.user);
+  // The owner's own photo. Blank for most accounts — <UserAvatar> then renders
+  // their name monogram, which is what every account starts on.
+  const profileAvatarUrl = useProfileStore((s) => s.profile.profileAvatarUrl);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -129,9 +127,12 @@ export function AppHeader() {
                 type="button"
                 className="hidden h-9 items-center gap-2.5 rounded-full border border-border bg-warm/60 py-1 pl-1 pr-2.5 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary/30 xl:flex"
               >
-                <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  {initials(displayName)}
-                </span>
+                <UserAvatar
+                  name={user?.fullName}
+                  email={user?.email}
+                  src={profileAvatarUrl}
+                  className="size-7 text-xs"
+                />
                 <div className="leading-tight">
                   <p className="max-w-[120px] text-left truncate text-xs font-semibold">{titleCaseName(displayName)}</p>
                   <p className="text-[10px] text-left text-muted-foreground">{roleLabel(user)}</p>

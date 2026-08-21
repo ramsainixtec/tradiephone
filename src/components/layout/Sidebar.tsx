@@ -41,6 +41,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn, titleCaseName } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/misc";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -70,13 +71,6 @@ const ROLE_LABEL: Record<string, string> = {
   USER: "Member",
   RESELLER: "Reseller",
 };
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "U";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 interface NavItem {
   to: string;
@@ -351,9 +345,12 @@ export function Sidebar() {
         {isMobile && (
           <div className="border-b border-border px-4 pb-3">
             <div className="flex items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                {initials(titleCaseName(displayName))}
-              </span>
+              <UserAvatar
+                name={user?.fullName}
+                email={user?.email}
+                src={profile.profileAvatarUrl}
+                className="size-11 text-sm"
+              />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold leading-tight">
                   {titleCaseName(displayName)}

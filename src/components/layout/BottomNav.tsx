@@ -1,8 +1,10 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, Inbox, BrainCircuit, Plug } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { cn, titleCaseName } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useProfileStore } from "@/stores/useProfileStore";
 import { useUiStore } from "@/stores/useUiStore";
 
 interface BottomNavItem {
@@ -22,13 +24,6 @@ const ITEMS: BottomNavItem[] = [
   { to: "/dashboard/crm", label: "Connect CRM", icon: Plug },
 ];
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "U";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
 /**
  * Fixed bottom app bar for phones & tablets (hidden from md up). Shows the four
  * customer tabs plus a trailing profile item that opens the side drawer. STAFF
@@ -37,6 +32,7 @@ function initials(name: string): string {
  */
 export function BottomNav() {
   const user = useAuthStore((s) => s.user);
+  const profileAvatarUrl = useProfileStore((s) => s.profile.profileAvatarUrl);
   const role = user?.role;
   const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
   const mobileSidebarOpen = useUiStore((s) => s.mobileSidebarOpen);
@@ -47,7 +43,6 @@ export function BottomNav() {
   if (!showTabs) return null;
   // Admins/staff open the "Admin" panel; customers open their "Profile" panel.
   const profileLabel = role === "USER" ? "Profile" : "Admin";
-  const displayName = user?.fullName || user?.email || "User";
 
   return (
     <nav
@@ -95,9 +90,12 @@ export function BottomNav() {
           !showTabs && "flex-none px-6",
         )}
       >
-        <span className="grid size-7 place-items-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-          {initials(titleCaseName(displayName))}
-        </span>
+        <UserAvatar
+          name={user?.fullName}
+          email={user?.email}
+          src={profileAvatarUrl}
+          className="size-7 text-[11px]"
+        />
         <span className="max-w-full truncate leading-none">{profileLabel}</span>
       </button>
     </nav>

@@ -267,6 +267,14 @@ export const api = {
     },
     /** Clear it — the platform branding avatar (or stock headshot) takes over. */
     removeAvatar: () => del<{ assistantAvatarUrl: string }>("/api/profile/avatar"),
+    /** Replace the account OWNER's photo (not the assistant's). Returns the new URL. */
+    uploadPhoto: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return upload<{ profileAvatarUrl: string }>("/api/profile/photo", form);
+    },
+    /** Clear it — the name monogram takes over again. */
+    removePhoto: () => del<{ profileAvatarUrl: string }>("/api/profile/photo"),
     update: (
       data: Partial<
         Pick<

@@ -32,7 +32,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar, StatusPill } from "@/components/ui/misc";
-import { clamp, cn, formatDateDMY } from "@/lib/utils";
+import { clamp, cn, formatDateDMY, initialsFor } from "@/lib/utils";
 import { env } from "@/lib/env";
 import { api, ApiError, type Invoice, type SubscriptionDetail, type SubscriptionPlan } from "@/lib/api";
 import { useStripePortal } from "@/hooks/useStripePortal";
@@ -44,6 +44,7 @@ import { useAgentStore } from "@/stores/useAgentStore";
 import { useBrandingStore } from "@/stores/useBrandingStore";
 import { avatarForVoice } from "@/data/voices";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { phoneError } from "@/data/countries";
 import { SettingsRow } from "./SettingsRow";
 
@@ -109,6 +110,11 @@ export default function SettingsPage() {
           />
         )}
 
+        {/* The owner's own photo — shown wherever the app addresses them by
+            name. Staff have no Profile row for the upload to write to, so they
+            stay on the name monogram like every other un-uploaded account. */}
+        {!isStaff && <ProfilePhotoCard className="lg:col-span-2" />}
+
         {/* The account's own receptionist photo. Staff have no assistant, so
             they never see this card. */}
         {!isStaff && <AssistantAvatarCard className="lg:col-span-2" isAdmin={isAdmin} />}
@@ -128,6 +134,123 @@ export default function SettingsPage() {
         <SupportCard className="lg:col-span-2" />
       </div>
     </div>
+  );
+}
+
+/* ================================================================== */
+/*  1a. Profile photo (the account owner's own picture)                */
+/* ================================================================== */
+
+/** Change the photo shown for YOU across the app — header chip, side drawer and
+ *  the dashboard greeting banner. There is no default image to provision at
+ *  signup: with nothing uploaded, <UserAvatar> renders a monogram of your name,
+ *  so a brand-new account already has a real avatar and this card is purely
+ *  opt-in. Removing the photo returns to that monogram. */
+function ProfilePhotoCard({ className }: { className?: string }) {
+  const profile = useProfileStore((s) => s.profile);
+  const setProfileAvatar = useProfileStore((s) => s.setProfileAvatar);
+  const authUser = useAuthStore((s) => s.user);
+  const [busy, setBusy] = useState<"upload" | "remove" | null>(null);
+
+  const photoUrl = profile.profileAvatarUrl ?? "";
+  const usingOwn = Boolean(photoUrl.trim());
+  const name = profile.fullName || authUser?.fullName;
+  const email = profile.email || authUser?.email;
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Clear the input first: picking the SAME file twice must re-fire change,
+    // which it won't if the value is still set.
+    e.target.value = "";
+    if (!file) return;
+    setBusy("upload");
+    try {
+      const { profileAvatarUrl } = await api.profile.uploadPhoto(file);
+      setProfileAvatar(profileAvatarUrl);
+      toast.success("Profile photo updated");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't upload that photo");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onRemove() {
+    setBusy("remove");
+    try {
+      await api.profile.removePhoto();
+      setProfileAvatar("");
+      toast.success("Profile photo removed");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Couldn't remove that photo");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Profile Photo</CardTitle>
+        <CardDescription>
+          Your own picture, shown in the header, the menu and your dashboard greeting.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-center gap-5">
+        <UserAvatar
+          name={name}
+          email={email}
+          src={photoUrl}
+          className="size-20 text-2xl ring-2 ring-border"
+        />
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <label
+              className={cn(
+                "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted",
+                busy && "pointer-events-none opacity-60",
+              )}
+            >
+              {busy === "upload" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ImageUp className="size-4" />
+              )}
+              {usingOwn ? "Replace photo" : "Upload photo"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                onChange={(e) => void onPick(e)}
+                disabled={Boolean(busy)}
+              />
+            </label>
+
+            {usingOwn && (
+              <Button
+                variant="outline"
+                onClick={() => void onRemove()}
+                disabled={Boolean(busy)}
+                className="text-danger hover:bg-danger-tint"
+              >
+                {busy === "remove" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+                Remove
+              </Button>
+            )}
+          </div>
+
+          <p className="mt-2.5 text-xs text-muted-foreground">
+            PNG, JPEG or WebP, up to 4&nbsp;MB. Square images work best.
+            {!usingOwn && ` Right now it's showing your initials, ${initialsFor(name, email)}.`}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
