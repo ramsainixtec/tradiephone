@@ -87,3 +87,4 @@ classes (`bg-primary`, `text-success`, `bg-warm`, `bg-premium-tint`, …).
 - Uses **zod 3** (not 4) for ecosystem/`@hookform/resolvers` compatibility. Bump later if needed.
 - The Express + Prisma backend lives in [`server/`](server/); the frontend stores call it
   directly via [`src/lib/api.ts`](src/lib/api.ts).
+ 
